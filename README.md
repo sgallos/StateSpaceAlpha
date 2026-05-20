@@ -13,6 +13,7 @@ StateSpaceAlpha/
   README.md
   SIMULATION_PLAN.md
   smoke_test_alpha_extraction.m
+  SS_age_pooled_iwp.m
   SS_age_diff.m
   run_ss_age_diff.m
   hgam_sensitivity.R
@@ -73,8 +74,8 @@ StateSpaceAlpha/
 2. Read `mfdb_subject_registry.csv` and load each subject's MFDB `.mat` file.
 3. Compute alpha power as already done in the existing MFDB code: integrate 8-13 Hz in linear power, then convert to dB.
 4. Build the response vector as subject-level alpha power in dB, with group and age as covariates.
-5. Run `run_ss_age_diff.m` for the Step 2 pooled 2-D IWP filter and RTS smoother.
-6. Extend `SS_age_diff.m` to the Step 3 group-difference model after Step 2 passes visual and numerical checks.
+5. Use `SS_age_pooled_iwp.m` as the preserved Step 2 pooled 2-D IWP filter and RTS smoother reference.
+6. Run `run_ss_age_diff.m` for the Step 3 4-D baseline + CP-control difference model.
 7. Validate the model with parametric bootstrap and identifiability checks before interpreting the fitted trajectory.
 8. Run `hgam_sensitivity.R` as a separate smoothness-prior cross-check.
 
@@ -84,3 +85,11 @@ Step 2 run command:
 cd('/Users/gallo/projects/StateSpaceAlpha')
 run_ss_age_diff
 ```
+
+Current `run_ss_age_diff.m` runs the Step 3 model and writes:
+
+- `outputs/ssm_step3_age_difference_results.mat`
+- `outputs/ssm_step3_age_difference_trajectory.csv`
+- `outputs/ssm_step3_baseline_cp_overlay.png`
+- `outputs/ssm_step3_delta_primary.png`
+- `outputs/ssm_step3_delta_q_sensitivity.png`
