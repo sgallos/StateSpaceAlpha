@@ -16,8 +16,10 @@ StateSpaceAlpha/
   SS_age_pooled_iwp.m
   SS_age_diff.m
   SS_age_diff_em.m
+  SS_age_diff_bootstrap_simultaneous.m
   run_ss_age_diff.m
   run_ss_age_diff_em.m
+  run_ss_age_diff_bootstrap_simultaneous.m
   hgam_sensitivity.R
   references/
     core_inputs/
@@ -79,8 +81,9 @@ StateSpaceAlpha/
 5. Use `SS_age_pooled_iwp.m` as the preserved Step 2 pooled 2-D IWP filter and RTS smoother reference.
 6. Run `run_ss_age_diff.m` for the Step 3 4-D baseline + CP-control difference model.
 7. Run `run_ss_age_diff_em.m` for the Step 4 EM-estimated IWP smoothness model.
-8. Validate the model with parametric bootstrap and identifiability checks before interpreting the fitted trajectory.
-9. Run `hgam_sensitivity.R` as a separate smoothness-prior cross-check.
+8. Run `run_ss_age_diff_bootstrap_simultaneous.m` for Step 5 MFDB bootstrap simultaneous confidence bands.
+9. Validate the model with parametric bootstrap and identifiability checks before interpreting the fitted trajectory.
+10. Run `hgam_sensitivity.R` as a separate smoothness-prior cross-check.
 
 Step 3 run command:
 
@@ -113,3 +116,20 @@ Current `run_ss_age_diff_em.m` runs the EM-estimated 4-D model and writes:
 - `outputs/ssm_step4_em_loglik_history.png`
 - `outputs/ssm_step4_em_q_history.png`
 - `outputs/ssm_step4_em_vs_step3_sensitivity.png`, if Step 3 outputs are present
+
+Step 5 run command:
+
+```matlab
+cd('/Users/gallo/projects/StateSpaceAlpha')
+run_ss_age_diff_bootstrap_simultaneous
+```
+
+Current `run_ss_age_diff_bootstrap_simultaneous.m` runs the MFDB-row bootstrap with fixed q values and writes:
+
+- `outputs/boot_alpha_dB_cache.mat`
+- `outputs/ssm_step5_bootstrap_simultaneous_results.mat`
+- `outputs/ssm_step5_bootstrap_band_summary.csv`
+- `outputs/ssm_step5_bootstrap_delta_distribution.csv`
+- `outputs/ssm_step5_delta_simultaneous_band.png`
+- `outputs/ssm_step5_pointwise_vs_simultaneous_band.png`
+- `outputs/ssm_step5_bootstrap_trajectory_diagnostic.png`
