@@ -57,7 +57,11 @@ V_k = mfdb_var_k + sigmaBio
 ```
 
 `mfdb_var_k` captures uncertainty in the subject alpha estimate. `sigmaBio`
-captures residual between-subject biological variability.
+captures residual between-subject biological variability. In the primary
+workflow, `sigmaBio` is estimated from group-specific age-trend residuals in
+the 4 x 30 s sub-epoch table, subtracting each subject's empirical sub-epoch
+standard error of the mean contribution. This keeps the biological variance
+estimate separate from within-recording measurement variability.
 
 ## Smoothness Prior
 

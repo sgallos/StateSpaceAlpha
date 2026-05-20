@@ -1,9 +1,8 @@
 function plot_subjects_with_trajectories(resultsFile, outputFile)
 %PLOT_SUBJECTS_WITH_TRAJECTORIES Plot data with Control and CP SSM curves.
 %
-% Shows the 19 subject-level alpha values with 95% within-subject/sub-epoch
-% error bars, overlaid on the posterior Control trajectory f0(a) and the
-% posterior CP trajectory f0(a) + delta(a).
+% Shows the 19 subject-level alpha values overlaid on the posterior Control
+% trajectory f0(a) and the posterior CP trajectory f0(a) + delta(a).
 
 if nargin < 1 || isempty(resultsFile)
     repoRoot = fileparts(fileparts(mfilename('fullpath')));
@@ -27,14 +26,11 @@ end
 
 trajectory = sortrows(S.primaryResult.trajectory, {'ageYears','subjectID'});
 assert_required_columns(trajectory);
-subjectErrorVariance = get_subject_error_variance(S, trajectory);
 
 ageYears = trajectory.ageYears(:);
 alphaDB = trajectory.alpha_dB(:);
 isCP = strcmpi(trajectory.groupLabel, "CP");
 isControl = ~isCP;
-
-subjectErrorBar = 1.96 * sqrt(max(subjectErrorVariance(:), 0));
 
 controlMean = trajectory.baselineMean_dB(:);
 controlLow = trajectory.baselineCILow_dB(:);
@@ -61,21 +57,15 @@ hControlLine = plot(ax, ageYears, controlMean, '-', 'Color', controlColor, ...
 hCPLine = plot(ax, ageYears, cpMean, '-', 'Color', cpColor, ...
     'LineWidth', 2.4);
 
-hControlSubjects = errorbar(ax, ageYears(isControl), alphaDB(isControl), ...
-    subjectErrorBar(isControl), 'o', ...
-    'Color', controlColor, 'MarkerFaceColor', controlColor, ...
-    'MarkerEdgeColor', 'w', 'MarkerSize', 7, ...
-    'LineWidth', 1.2, 'CapSize', 6);
-hCPSubjects = errorbar(ax, ageYears(isCP), alphaDB(isCP), ...
-    subjectErrorBar(isCP), 'o', ...
-    'Color', cpColor, 'MarkerFaceColor', cpColor, ...
-    'MarkerEdgeColor', 'w', 'MarkerSize', 7, ...
-    'LineWidth', 1.2, 'CapSize', 6);
+hControlSubjects = scatter(ax, ageYears(isControl), alphaDB(isControl), ...
+    65, controlColor, 'filled', 'MarkerEdgeColor', 'w', 'LineWidth', 1);
+hCPSubjects = scatter(ax, ageYears(isCP), alphaDB(isCP), ...
+    65, cpColor, 'filled', 'MarkerEdgeColor', 'w', 'LineWidth', 1);
 
 xlabel(ax, 'Age (years)');
 ylabel(ax, 'F3 alpha power (dB)');
 title(ax, {'Control and CP alpha trajectories with subject-level data', ...
-    'Subject error bars are 95% intervals from within-subject/sub-epoch variance'}, ...
+    'Bands are 95% posterior credible intervals from the SSM smoother'}, ...
     'FontWeight', 'normal');
 legend(ax, [hControlBand, hCPBand, hControlLine, hCPLine, hControlSubjects, hCPSubjects], ...
     {'Control 95% credible band', 'CP 95% credible band', ...
@@ -100,28 +90,6 @@ function assert_required_columns(trajectory)
     if ~isempty(missingColumns)
         error('Trajectory table is missing required columns: %s', strjoin(missingColumns, ', '));
     end
-end
-
-function subjectErrorVariance = get_subject_error_variance(S, trajectory)
-    if isfield(S, 'alphaTable') && ismember('mfdb_var', S.alphaTable.Properties.VariableNames)
-        alphaTable = S.alphaTable;
-        subjectErrorVariance = nan(height(trajectory), 1);
-
-        for i = 1:height(trajectory)
-            matchIdx = find(strcmpi(alphaTable.subjectID, trajectory.subjectID(i)), 1, 'first');
-            if ~isempty(matchIdx)
-                subjectErrorVariance(i) = alphaTable.mfdb_var(matchIdx);
-            end
-        end
-
-        if all(isfinite(subjectErrorVariance))
-            return;
-        end
-    end
-
-    warning(['Using trajectory.observationVariance for subject error bars because ' ...
-        'alphaTable.mfdb_var was not available for every subject.']);
-    subjectErrorVariance = trajectory.observationVariance;
 end
 
 function hBand = plot_ci_band(ax, xVals, ciLow, ciHigh, bandColor, faceAlpha)

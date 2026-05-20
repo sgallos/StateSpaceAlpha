@@ -3,19 +3,21 @@ function [sigmaBioFixed, diagnostics] = estimate_sigmaBio_from_subepochs(subepoc
 %
 % This helper uses the 76-row 4 x 30 s sub-epoch alpha table to estimate a
 % fixed subject-level variance component for the SSM. It first collapses each
-% subject to a mean alpha value, removes a simple group-specific age trend,
-% then subtracts the MFDB contribution to the variance of each subject mean.
+% subject to a mean alpha value, then estimates the between-subject variance
+% under one of several explicit estimator choices.
 %
 % The returned sigmaBioFixed is intended to be held fixed while EM estimates
 % only q_f0 and q_delta.
 
     parser = inputParser();
     parser.FunctionName = 'estimate_sigmaBio_from_subepochs';
+    addParameter(parser, 'Estimator', "trend_residual_sem", @(x) isstring(x) || ischar(x));
     addParameter(parser, 'TrendModel', "linear", @(x) isstring(x) || ischar(x));
     addParameter(parser, 'SigmaBioFloor', 0.01, @(x) isnumeric(x) && isscalar(x) && x >= 0);
     addParameter(parser, 'Verbose', true, @(x) islogical(x) || isnumeric(x));
     parse(parser, varargin{:});
     opts = parser.Results;
+    opts.Estimator = lower(string(opts.Estimator));
     opts.TrendModel = lower(string(opts.TrendModel));
     opts.Verbose = logical(opts.Verbose);
 
@@ -29,39 +31,75 @@ function [sigmaBioFixed, diagnostics] = estimate_sigmaBio_from_subepochs(subepoc
 
     subepochTable = standardize_subepoch_table(subepochTable);
     subjectTable = build_subject_summary(subepochTable);
-    residuals = remove_group_age_trend(subjectTable, opts.TrendModel);
+    [varianceSource, varianceDescription, residuals] = ...
+        make_sigma_bio_variance_source(subjectTable, opts);
 
-    validResiduals = residuals(isfinite(residuals));
-    if numel(validResiduals) < 4
-        error('Need at least 4 valid subject residuals to estimate sigmaBio.');
+    validVarianceSource = varianceSource(isfinite(varianceSource));
+    if numel(validVarianceSource) < 4
+        error('Need at least 4 valid subject values to estimate sigmaBio.');
     end
 
-    empiricalVarianceOfSubjectMeans = var(validResiduals, 0);
-    meanMeasurementVarianceOfSubjectMean = mean(subjectTable.measurementVarianceOfMean, 'omitnan');
-    sigmaBioRaw = empiricalVarianceOfSubjectMeans - meanMeasurementVarianceOfSubjectMean;
+    empiricalVarianceOfSubjectMeans = var(validVarianceSource, 0);
+    measurementVarianceToSubtract = choose_measurement_variance(subjectTable, opts.Estimator);
+    sigmaBioRaw = empiricalVarianceOfSubjectMeans - measurementVarianceToSubtract;
     sigmaBioFixed = max(sigmaBioRaw, opts.SigmaBioFloor);
 
     subjectTable.trendResidual_dB = residuals;
 
     diagnostics = struct();
     diagnostics.sourceFile = sourceFile;
+    diagnostics.estimator = opts.Estimator;
     diagnostics.trendModel = opts.TrendModel;
+    diagnostics.varianceDescription = varianceDescription;
     diagnostics.subjectTable = subjectTable;
     diagnostics.empiricalVarianceOfSubjectMeans = empiricalVarianceOfSubjectMeans;
-    diagnostics.meanMeasurementVarianceOfSubjectMean = meanMeasurementVarianceOfSubjectMean;
+    diagnostics.meanMeasurementVarianceOfSubjectMean = measurementVarianceToSubtract;
     diagnostics.sigmaBioRaw = sigmaBioRaw;
     diagnostics.sigmaBioFixed = sigmaBioFixed;
     diagnostics.sigmaBioFloor = opts.SigmaBioFloor;
 
     if opts.Verbose
         fprintf('Fixed sigmaBio estimate from sub-epochs\n');
+        fprintf('  estimator: %s\n', opts.Estimator);
         fprintf('  trend model: %s\n', opts.TrendModel);
-        fprintf('  empirical variance of subject means after trend: %.6f dB^2\n', ...
+        fprintf('  variance source: %s\n', varianceDescription);
+        fprintf('  empirical variance of subject source: %.6f dB^2\n', ...
             empiricalVarianceOfSubjectMeans);
-        fprintf('  mean MFDB variance of subject mean: %.6f dB^2\n', ...
-            meanMeasurementVarianceOfSubjectMean);
+        fprintf('  variance subtracted: %.6f dB^2\n', measurementVarianceToSubtract);
         fprintf('  raw sigmaBio: %.6f dB^2\n', sigmaBioRaw);
         fprintf('  fixed sigmaBio: %.6f dB^2\n', sigmaBioFixed);
+    end
+end
+
+function [varianceSource, varianceDescription, residuals] = ...
+        make_sigma_bio_variance_source(subjectTable, opts)
+    residuals = remove_group_age_trend(subjectTable, opts.TrendModel);
+
+    switch opts.Estimator
+        case {"trend_residual_mfdb", "trend_residual_sem"}
+            varianceSource = residuals;
+            varianceDescription = "group-age trend residuals";
+
+        case "between_only"
+            varianceSource = subjectTable.subjectMeanAlpha_dB;
+            varianceDescription = "raw subject means, no group or age trend removed";
+
+        otherwise
+            error(['Estimator must be "trend_residual_sem", "trend_residual_mfdb", ' ...
+                'or "between_only".']);
+    end
+end
+
+function measurementVariance = choose_measurement_variance(subjectTable, estimator)
+    switch estimator
+        case "trend_residual_mfdb"
+            measurementVariance = mean(subjectTable.measurementVarianceOfMean, 'omitnan');
+
+        case {"trend_residual_sem", "between_only"}
+            measurementVariance = mean(subjectTable.empiricalSemVariance, 'omitnan');
+
+        otherwise
+            error('Unknown sigmaBio estimator "%s".', estimator);
     end
 end
 
@@ -84,11 +122,11 @@ function subjectTable = build_subject_summary(subepochTable)
     [G, subjectIDs] = findgroups(subepochTable.subjectID);
     nSubjects = numel(subjectIDs);
 
-    subjectTable = table('Size', [nSubjects, 9], ...
-        'VariableTypes', {'string','string','double','double','double','double','double','double','double'}, ...
+    subjectTable = table('Size', [nSubjects, 10], ...
+        'VariableTypes', {'string','string','double','double','double','double','double','double','double','double'}, ...
         'VariableNames', {'subjectID','groupLabel','ageYears','nSubEpochs','subjectMeanAlpha_dB', ...
         'subjectAlphaSD_dB','subjectAlphaRange_dB','meanSubepochMfdbVariance', ...
-        'measurementVarianceOfMean'});
+        'measurementVarianceOfMean','empiricalSemVariance'});
 
     for i = 1:nSubjects
         rows = G == i;
@@ -106,6 +144,11 @@ function subjectTable = build_subject_summary(subepochTable)
         subjectTable.subjectAlphaRange_dB(i) = max(thisAlpha) - min(thisAlpha);
         subjectTable.meanSubepochMfdbVariance(i) = mean(thisVar, 'omitnan');
         subjectTable.measurementVarianceOfMean(i) = sum(thisVar, 'omitnan') / (nRows ^ 2);
+        if numel(validAlpha) > 1
+            subjectTable.empiricalSemVariance(i) = var(validAlpha, 0) / numel(validAlpha);
+        else
+            subjectTable.empiricalSemVariance(i) = 0;
+        end
     end
 end
 

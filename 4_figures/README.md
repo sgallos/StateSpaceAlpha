@@ -35,9 +35,8 @@ whole age range, with the band excluding zero between about ages 12.2 and
 
 ## subjects_with_trajectories.png
 
-The 19 subjects plotted as points with within-subject/sub-epoch error bars,
-overlaid against the posterior Control trajectory `f0(a)` and CP trajectory
-`f0(a) + delta(a)`.
+The 19 subjects plotted as points, overlaid against the posterior Control
+trajectory `f0(a)` and CP trajectory `f0(a) + delta(a)`.
 Takeaway: this is the concrete data-plus-model view. The Control trajectory is
 visibly higher than the CP trajectory, while the subject points show which
 children sit above or below their group's posterior expectation.

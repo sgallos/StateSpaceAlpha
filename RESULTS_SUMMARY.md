@@ -29,12 +29,12 @@ resampled. The runs differ only in how the hyperparameters are chosen.
 
 | Strategy name | What it does | q_f0 | q_delta | sigmaBio | Converged | Boundary | Zero excluded age range |
 | --- | --- | ---: | ---: | ---: | --- | --- | --- |
-| Fixed-Heuristic | Fixed qInit, fixed empirical sigmaBio | 2.97 | 2.97 | 14.51 | yes | no | 12.20-14.87 yr |
-| EM-Smoothness | EM q, fixed empirical sigmaBio | 14.04 | 25.54 | 14.51 | no | no | 13.93-14.87 yr |
+| Fixed-Heuristic | Fixed qInit, fixed empirical sigmaBio | 2.97 | 2.97 | 14.40 | yes | no | 12.20-14.87 yr |
+| EM-Smoothness | EM q, fixed empirical sigmaBio | 29.62 | 31.79 | 14.40 | no | no | 13.93-14.87 yr |
 | EM-Joint | Joint EM, collapsed 19-row table | 15.26 | 36.52 | 15.75 | no | no | 14.03-14.58 yr |
 | EM-Joint-Subepoch | Joint EM, direct 76-row sub-epoch table | 1e6 | 1e6 | 1.32 | yes | yes | diagnostic failure |
 | EM-Biological | Fixed qInit, EM sigmaBio | 2.97 | 2.97 | 15.72 | yes | no | 12.20-14.87 yr |
-| Profile-Likelihood | Profile-likelihood q, fixed empirical sigmaBio | 3.86 | 0.01 | 14.51 | yes | yes | 12.20-15.20 yr |
+| Profile-Likelihood | Profile-likelihood q, fixed empirical sigmaBio | 3.86 | 0.01 | 14.40 | yes | yes | 12.20-15.20 yr |
 
 Interpretation:
 
@@ -60,7 +60,7 @@ Interpretation:
   primary fixed-hyperparameter delta(a) posterior mean and credible band.
 - [subjects_with_trajectories.png](4_figures/subjects_with_trajectories.png):
   Control and CP posterior trajectories with the 19 subject-level alpha values
-  and their within-subject/sub-epoch error bars overlaid.
+  overlaid.
 - [sensitivity_all_six_overlay.png](4_figures/sensitivity_all_six_overlay.png):
   posterior means from all six no-resampling runs.
 - [sensitivity_all_six_bands.png](4_figures/sensitivity_all_six_bands.png):
