@@ -88,6 +88,7 @@ function results = SS_age_diff(subjectTable, varargin)
     kalmanGain = nan(stateDimension, nSubjects);
     innovation = nan(nSubjects, 1);
     innovationVariance = nan(nSubjects, 1);
+    logLikContribution = nan(nSubjects, 1);
 
     initialState = [median(alphaDB, 'omitnan'); 0; 0; 0];
     initialCovariance = opts.initialCovarianceScale * eye(stateDimension);
@@ -120,6 +121,8 @@ function results = SS_age_diff(subjectTable, varargin)
         if innovationVariance(k) <= 0 || ~isfinite(innovationVariance(k))
             error('Invalid innovation variance at subject %d.', k);
         end
+        logLikContribution(k) = -0.5 * (log(2 * pi * innovationVariance(k)) + ...
+            innovation(k)^2 / innovationVariance(k));
 
         thisKalmanGain = (pPrior * Ck') / innovationVariance(k);
         xPost = xPrior + thisKalmanGain * innovation(k);
@@ -204,6 +207,8 @@ function results = SS_age_diff(subjectTable, varargin)
     diagnostics.nControl = nControl;
     diagnostics.innovation = innovation;
     diagnostics.innovationVariance = innovationVariance;
+    diagnostics.logLikContribution = logLikContribution;
+    diagnostics.logLikelihood = sum(logLikContribution);
     diagnostics.kalmanGain = kalmanGain;
 
     results = struct();
@@ -220,6 +225,7 @@ function results = SS_age_diff(subjectTable, varargin)
     results.processCovariance = processCovariance;
     results.observationMatrix = observationMatrix;
     results.diagnostics = diagnostics;
+    results.logLikelihood = diagnostics.logLikelihood;
 
     if opts.verbose
         fprintf('SS_age_diff Step 3 baseline/delta IWP fit complete.\n');

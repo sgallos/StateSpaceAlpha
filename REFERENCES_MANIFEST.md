@@ -49,6 +49,7 @@ These are the files to implement in this repo:
 - `SS_age_pooled_iwp.m`
 - `run_ss_age_diff.m`
 - `run_ssm_posterior_no_resampling.m`
+- `run_ssm_no_resampling_matrix.m`
 - `run_ss_age_diff_em.m`
 - `run_ss_age_diff_em_fixed_sigma.m`
 - `run_ss_age_diff_em_subepoch76.m`

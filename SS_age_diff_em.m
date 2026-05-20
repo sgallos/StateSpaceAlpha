@@ -30,6 +30,7 @@ function results = SS_age_diff_em(subjectTable, varargin)
         @(x) isempty(x) || (isnumeric(x) && isscalar(x) && isfinite(x) && x >= 0));
     addParameter(parser, 'sigmaBioFloor', 1e-6, @(x) isnumeric(x) && isscalar(x) && x >= 0);
     addParameter(parser, 'sigmaBioCeiling', 100, @(x) isnumeric(x) && isscalar(x) && x > 0);
+    addParameter(parser, 'fixQ', false, @(x) islogical(x) || isnumeric(x));
     addParameter(parser, 'fixSigmaBio', false, @(x) islogical(x) || isnumeric(x));
     addParameter(parser, 'initialCovarianceScale', 100, @(x) isnumeric(x) && isscalar(x) && x > 0);
     addParameter(parser, 'minObservationVariance', 1e-6, @(x) isnumeric(x) && isscalar(x) && x > 0);
@@ -40,6 +41,7 @@ function results = SS_age_diff_em(subjectTable, varargin)
     opts = parser.Results;
     opts.useApproximateMstep = logical(opts.useApproximateMstep);
     opts.allowRepeatedSubjectRows = logical(opts.allowRepeatedSubjectRows);
+    opts.fixQ = logical(opts.fixQ);
     opts.fixSigmaBio = logical(opts.fixSigmaBio);
     opts.verbose = logical(opts.verbose);
 
@@ -90,6 +92,9 @@ function results = SS_age_diff_em(subjectTable, varargin)
         end
         if opts.fixSigmaBio
             fprintf('Fixed sigmaBio mode: EM estimates q_f0 and q_delta only.\n');
+        end
+        if opts.fixQ
+            fprintf('Fixed-q mode: EM estimates sigmaBio only.\n');
         end
         if opts.useApproximateMstep
             fprintf('M-step mode: approximate, without lag-one covariance.\n');
@@ -175,8 +180,16 @@ function startResult = run_single_em_start(data, qF0Start, qDeltaStart, sigmaBio
         [qF0New, qDeltaNew, sigmaBioNew, thisMstepDiagnostics] = ...
             update_hyperparameters_from_smoother(fit, data, opts);
 
-        qF0New = clamp_q(qF0New, opts);
-        qDeltaNew = clamp_q(qDeltaNew, opts);
+        if opts.fixQ
+            qF0New = qF0;
+            qDeltaNew = qDelta;
+            thisMstepDiagnostics.fixedQ = true;
+        else
+            qF0New = clamp_q(qF0New, opts);
+            qDeltaNew = clamp_q(qDeltaNew, opts);
+            thisMstepDiagnostics.fixedQ = false;
+        end
+
         if opts.fixSigmaBio
             sigmaBioNew = sigmaBio;
             thisMstepDiagnostics.fixedSigmaBio = true;
@@ -188,7 +201,12 @@ function startResult = run_single_em_start(data, qF0Start, qDeltaStart, sigmaBio
         sigmaBioNewHistory(iter) = sigmaBioNew;
         mstepDiagnostics{iter} = thisMstepDiagnostics;
 
-        if opts.fixSigmaBio
+        if opts.fixQ && opts.fixSigmaBio
+            relativeChange = 0;
+        elseif opts.fixQ
+            denominator = max(sigmaBio, opts.sigmaBioFloor);
+            relativeChange = abs(sigmaBioNew - sigmaBio) / denominator;
+        elseif opts.fixSigmaBio
             denominator = max([qF0, qDelta], [opts.qFloor, opts.qFloor]);
             relativeChange = max(abs([qF0New - qF0, qDeltaNew - qDelta]) ./ denominator);
         else

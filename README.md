@@ -20,7 +20,11 @@ StateSpaceAlpha/
   SS_age_diff_em.m
   SS_age_diff_bootstrap_simultaneous.m
   run_ss_age_diff.m
+  run_ssm_posterior_no_resampling.m
+  run_ssm_no_resampling_matrix.m
   run_ss_age_diff_em.m
+  run_ss_age_diff_em_fixed_sigma.m
+  run_ss_age_diff_em_subepoch76.m
   run_ss_age_diff_bootstrap_simultaneous.m
   hgam_sensitivity.R
   references/
@@ -91,12 +95,13 @@ StateSpaceAlpha/
 7. Run `run_ss_age_diff.m` for the Step 3 4-D baseline + CP-control difference model.
 8. Run `run_ssm_residual_sanity_check.m` to compare fitted residual scatter against MFDB observation uncertainty.
 9. Run `run_ssm_posterior_no_resampling.m` for the primary SSM posterior workflow. This fixes hyperparameters, uses the smoother posterior covariance for the delta(a) credible band, and does not resample subjects.
-10. Run `run_ss_age_diff_em.m` for the Step 4 EM-estimated IWP smoothness diagnostic, including the additive biological variance term.
-11. Optionally run `run_ss_age_diff_em_fixed_sigma.m` as a Path B diagnostic that estimates a fixed `sigmaBio` from sub-epoch structure, then holds it fixed while EM estimates only `q_f0` and `q_delta`.
-12. Optionally run `run_ss_age_diff_em_subepoch76.m` as a diagnostic Step 4 variant that feeds the 76 sub-epoch rows directly into the SSM with identity transitions within each subject. This is an identifiability diagnostic, not the default reporting path.
-13. Run `run_ss_age_diff_bootstrap_simultaneous.m` for Step 5 two-stage subject + MFDB bootstrap simultaneous confidence bands if a bootstrap sensitivity analysis is needed.
-14. Validate the model with parametric bootstrap and identifiability checks before interpreting the fitted trajectory.
-15. Run `hgam_sensitivity.R` as a separate smoothness-prior cross-check.
+10. Run `run_ssm_no_resampling_matrix.m` to compare the no-subject-resampling posterior bands across fixed, EM, joint-EM, sub-epoch, fixed-q, and profile-likelihood hyperparameter choices.
+11. Run `run_ss_age_diff_em.m` for the Step 4 EM-estimated IWP smoothness diagnostic, including the additive biological variance term.
+12. Optionally run `run_ss_age_diff_em_fixed_sigma.m` as a Path B diagnostic that estimates a fixed `sigmaBio` from sub-epoch structure, then holds it fixed while EM estimates only `q_f0` and `q_delta`.
+13. Optionally run `run_ss_age_diff_em_subepoch76.m` as a diagnostic Step 4 variant that feeds the 76 sub-epoch rows directly into the SSM with identity transitions within each subject. This is an identifiability diagnostic, not the default reporting path.
+14. Run `run_ss_age_diff_bootstrap_simultaneous.m` for Step 5 two-stage subject + MFDB bootstrap simultaneous confidence bands if a bootstrap sensitivity analysis is needed.
+15. Validate the model with parametric bootstrap and identifiability checks before interpreting the fitted trajectory.
+16. Run `hgam_sensitivity.R` as a separate smoothness-prior cross-check.
 
 Step 3 run command:
 
@@ -128,6 +133,32 @@ Current `run_ssm_posterior_no_resampling.m` loads the collapsed 4 x 30 s sub-epo
 - `outputs/ssm_posterior_no_resampling_sigmaBio_subject_diagnostics.csv`
 - `outputs/ssm_posterior_delta_primary_no_resampling.png`
 - `outputs/ssm_posterior_delta_sensitivity_no_resampling.png`
+
+No-resampling matrix command:
+
+```matlab
+cd('/Users/gallo/projects/StateSpaceAlpha')
+run_ssm_no_resampling_matrix
+```
+
+Current `run_ssm_no_resampling_matrix.m` keeps the inferential target fixed as the SSM smoother posterior for delta(a), never resamples subjects, and compares six hyperparameter-selection paths:
+
+- Run A: fixed `qInit`, fixed empirical `sigmaBio`, collapsed 19-row table
+- Run B: EM-estimated `q_f0` and `q_delta`, fixed empirical `sigmaBio`, collapsed 19-row table
+- Run C: joint EM for `q_f0`, `q_delta`, and `sigmaBio`, collapsed 19-row table
+- Run D: joint EM for `q_f0`, `q_delta`, and `sigmaBio`, direct 76-row sub-epoch table
+- Run E: fixed `qInit`, EM-estimated `sigmaBio`, collapsed 19-row table
+- Run F: profile-likelihood `q_f0` and `q_delta`, fixed empirical `sigmaBio`, collapsed 19-row table
+
+It writes:
+
+- `outputs/ssm_no_resampling_matrix_results.mat`
+- `outputs/ssm_no_resampling_matrix_summary.csv`
+- `outputs/ssm_no_resampling_matrix_trajectories.csv`
+- `outputs/ssm_no_resampling_matrix_profile_loglik_surface.csv`
+- `outputs/ssm_no_resampling_matrix_delta_overlay.png`
+- `outputs/ssm_no_resampling_matrix_delta_bands.png`
+- `outputs/ssm_no_resampling_matrix_profile_loglik_heatmap.png`
 
 Step 4 run command:
 
