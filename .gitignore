@@ -1,0 +1,11 @@
+*.asv
+.DS_Store
+
+# Keep generated outputs local unless explicitly curated for a release.
+outputs/
+
+# Full subject-level MFDB outputs are large and should not be committed.
+# Use small fixtures in references/core_inputs instead.
+references/core_inputs/*_mfdb.mat
+!references/core_inputs/*_fixture.mat
+
