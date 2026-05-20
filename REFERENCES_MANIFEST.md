@@ -10,6 +10,7 @@ source trees or full per-subject MFDB `.mat` outputs.
 Data preparation:
 
 - `1_data_preparation/smoke_test_alpha_extraction.m`
+- `1_data_preparation/check_subepoch_consistency.m`
 - `1_data_preparation/collapse_subepoch_alpha_table_for_ssm.m`
 
 State-space model:
@@ -24,6 +25,7 @@ Analysis runners:
 
 - `RUN_ME_StateSpaceAlpha.m`
 - `3_run_analyses/run_ss_age_diff.m`
+- `3_run_analyses/plot_subject_level_alpha_vs_age.m`
 - `3_run_analyses/run_ssm_posterior_no_resampling.m`
 - `3_run_analyses/run_ssm_no_resampling_matrix.m`
 - `3_run_analyses/run_ss_age_diff_em.m`
@@ -62,14 +64,19 @@ pipeline:
 
 Figures:
 
+- `4_figures/subepoch_consistency_scatter.png`
+- `4_figures/alpha_table_subepoch_vs_120s_comparison.png`
+- `4_figures/subject_level_alpha_vs_age.png`
 - `4_figures/primary_delta_trajectory.png`
-- `4_figures/no_resampling_matrix_overlay.png`
-- `4_figures/no_resampling_matrix_delta_bands.png`
-- `4_figures/profile_likelihood_heatmap.png`
+- `4_figures/sensitivity_all_six_overlay.png`
+- `4_figures/sensitivity_all_six_bands.png`
+- `4_figures/sensitivity_profile_loglik_heatmap.png`
 - `4_figures/em_loglik_history.png`
 
 Small CSV outputs:
 
+- `5_outputs_data/subepoch_consistency_summary.csv`
+- `5_outputs_data/alpha_table_subepoch_vs_120s_comparison.csv`
 - `5_outputs_data/ssm_no_resampling_matrix_summary.csv`
 - `5_outputs_data/ssm_no_resampling_matrix_trajectories.csv`
 - `5_outputs_data/ssm_posterior_no_resampling_primary_trajectory.csv`

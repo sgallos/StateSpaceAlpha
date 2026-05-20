@@ -1,4 +1,4 @@
-# 3 Run Analyses
+# 3 Analysis Scripts
 
 This folder contains scripts you run from MATLAB.
 
@@ -13,6 +13,8 @@ Key scripts:
 
 - `run_ssm_no_resampling_matrix.m`: main six-run no-subject-resampling
   sensitivity matrix.
+- `plot_subject_level_alpha_vs_age.m`: raw 19-subject alpha-vs-age scatter
+  before modeling.
 - `run_ssm_posterior_no_resampling.m`: primary fixed-hyperparameter posterior
   workflow.
 - `run_ss_age_diff_em_fixed_sigma.m`: EM q with fixed empirical sigmaBio.

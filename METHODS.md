@@ -115,16 +115,17 @@ Because the cohort is small, joint variance-component estimation is unstable
 in some settings. We therefore report a no-subject-resampling matrix of six
 hyperparameter strategies:
 
-- A: fixed `qInit`, fixed empirical `sigmaBio`
-- B: EM-estimated `q_f0` and `q_delta`, fixed empirical `sigmaBio`
-- C: joint EM for `q_f0`, `q_delta`, and `sigmaBio`
-- D: joint EM on the direct 76-row sub-epoch table
-- E: fixed `qInit`, EM-estimated `sigmaBio`
-- F: profile-likelihood `q_f0` and `q_delta`, fixed empirical `sigmaBio`
+- Fixed-Heuristic: fixed `qInit`, fixed empirical `sigmaBio`
+- EM-Smoothness: EM-estimated `q_f0` and `q_delta`, fixed empirical `sigmaBio`
+- EM-Joint: joint EM for `q_f0`, `q_delta`, and `sigmaBio`
+- EM-Joint-Subepoch: joint EM on the direct 76-row sub-epoch table
+- EM-Biological: fixed `qInit`, EM-estimated `sigmaBio`
+- Profile-Likelihood: profile-likelihood `q_f0` and `q_delta`, fixed empirical `sigmaBio`
 
-Runs A, E, and F are the cleanest no-resampling sensitivity checks. Runs B
-and C are useful but did not converge cleanly. Run D is diagnostic only
-because it hit the smoothness ceiling.
+Fixed-Heuristic, EM-Biological, and Profile-Likelihood are the cleanest
+no-resampling sensitivity checks. EM-Smoothness and EM-Joint are useful but
+did not converge cleanly. EM-Joint-Subepoch is diagnostic only because it hit
+the smoothness ceiling.
 
 ## What This Analysis Does Not Claim
 

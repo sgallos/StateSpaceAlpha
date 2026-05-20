@@ -2,7 +2,11 @@
 
 Curated small CSV outputs for review.
 
-- `ssm_no_resampling_matrix_summary.csv`: one row per no-resampling run,
+- `subepoch_consistency_summary.csv`: per-subject QC summary for the four
+  30 s alpha estimates.
+- `alpha_table_subepoch_vs_120s_comparison.csv`: compares the collapsed
+  sub-epoch alpha table against the original 120 s MFDB table.
+- `ssm_no_resampling_matrix_summary.csv`: one row per no-resampling strategy,
   including hyperparameters, convergence flags, boundary flags, and the age
   range where the credible band excludes zero.
 - `ssm_no_resampling_matrix_trajectories.csv`: trajectory-level output for
