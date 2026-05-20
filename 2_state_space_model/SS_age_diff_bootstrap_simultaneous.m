@@ -11,7 +11,7 @@ function results = SS_age_diff_bootstrap_simultaneous(alphaTable, varargin)
 % The smoothness q values are fixed throughout the bootstrap. Do not rerun
 % EM inside the bootstrap loop.
 
-    repoRoot = fileparts(mfilename('fullpath'));
+    repoRoot = fileparts(fileparts(mfilename('fullpath')));
     defaultRegistryFile = fullfile(repoRoot, 'references', 'core_inputs', 'mfdb_subject_registry.csv');
     defaultCacheFile = fullfile(repoRoot, 'outputs', 'boot_alpha_dB_cache.mat');
 

@@ -9,8 +9,11 @@
 clear; clc;
 
 %% Step 1: Locate input tables
-repoRoot = fileparts(mfilename('fullpath'));
+repoRoot = fileparts(fileparts(mfilename('fullpath')));
 outDir = fullfile(repoRoot, 'outputs');
+addpath(fullfile(repoRoot, '1_data_preparation'));
+addpath(fullfile(repoRoot, '2_state_space_model'));
+addpath(fullfile(repoRoot, '3_run_analyses'));
 if ~exist(outDir, 'dir')
     mkdir(outDir);
 end

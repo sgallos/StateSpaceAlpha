@@ -4,8 +4,11 @@
 
 clear; clc;
 
-repoRoot = fileparts(mfilename('fullpath'));
+repoRoot = fileparts(fileparts(mfilename('fullpath')));
 outDir = fullfile(repoRoot, 'outputs');
+addpath(fullfile(repoRoot, '1_data_preparation'));
+addpath(fullfile(repoRoot, '2_state_space_model'));
+addpath(fullfile(repoRoot, '3_run_analyses'));
 step3MatFile = fullfile(outDir, 'ssm_step3_age_difference_results.mat');
 
 if ~isfile(step3MatFile)

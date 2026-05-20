@@ -24,8 +24,11 @@ rngSeed = 1;
 rebuildCache = false;
 
 %% Step 2: Locate inputs
-repoRoot = fileparts(mfilename('fullpath'));
+repoRoot = fileparts(fileparts(mfilename('fullpath')));
 outDir = fullfile(repoRoot, 'outputs');
+addpath(fullfile(repoRoot, '1_data_preparation'));
+addpath(fullfile(repoRoot, '2_state_space_model'));
+addpath(fullfile(repoRoot, '3_run_analyses'));
 alphaTableFile = fullfile(outDir, alphaTableFileName);
 registryFile = fullfile(repoRoot, 'references', 'core_inputs', 'mfdb_subject_registry.csv');
 cacheFile = fullfile(outDir, 'boot_alpha_dB_cache.mat');

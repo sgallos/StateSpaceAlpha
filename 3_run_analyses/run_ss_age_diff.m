@@ -18,8 +18,11 @@
 clear; clc;
 
 %% Step 1: Locate the alpha table
-repoRoot = fileparts(mfilename('fullpath'));
+repoRoot = fileparts(fileparts(mfilename('fullpath')));
 outDir = fullfile(repoRoot, 'outputs');
+addpath(fullfile(repoRoot, '1_data_preparation'));
+addpath(fullfile(repoRoot, '2_state_space_model'));
+addpath(fullfile(repoRoot, '3_run_analyses'));
 
 % Choose which 19-row alpha table to fit.
 %   alpha_table_for_ssm.csv = original 120 s MFDB table

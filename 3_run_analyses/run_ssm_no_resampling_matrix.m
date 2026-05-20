@@ -9,8 +9,11 @@
 clear; clc;
 
 %% Step 1: User-facing settings
-repoRoot = fileparts(mfilename('fullpath'));
+repoRoot = fileparts(fileparts(mfilename('fullpath')));
 outDir = fullfile(repoRoot, 'outputs');
+addpath(fullfile(repoRoot, '1_data_preparation'));
+addpath(fullfile(repoRoot, '2_state_space_model'));
+addpath(fullfile(repoRoot, '3_run_analyses'));
 if ~exist(outDir, 'dir')
     mkdir(outDir);
 end
@@ -206,7 +209,7 @@ function qInit = compute_q_init(ageYears, alphaDB)
 end
 
 function [emResults, sourceName] = load_or_run_joint_em_collapsed(alphaTable)
-    outDir = fullfile(fileparts(mfilename('fullpath')), 'outputs');
+    outDir = fullfile(fileparts(fileparts(mfilename('fullpath'))), 'outputs');
     candidates = [
         string(fullfile(outDir, 'ssm_step4_em_age_difference_results_subepochs_collapsed.mat'))
         string(fullfile(outDir, 'ssm_step4_em_age_difference_results.mat'))
@@ -223,7 +226,8 @@ function [emResults, sourceName] = load_or_run_joint_em_collapsed(alphaTable)
                 emResults = S.emResults;
             end
             if ~isempty(emResults)
-                sourceName = string(candidates(i));
+                [~, sourceBase, sourceExt] = fileparts(candidates(i));
+                sourceName = "outputs/" + string(sourceBase) + string(sourceExt);
                 return;
             end
         end
@@ -238,7 +242,7 @@ function [emResults, sourceName] = load_or_run_joint_em_collapsed(alphaTable)
 end
 
 function [emResults, subjectTrajectory, sourceName] = load_or_run_joint_em_subepoch76(subepochTable)
-    outDir = fullfile(fileparts(mfilename('fullpath')), 'outputs');
+    outDir = fullfile(fileparts(fileparts(mfilename('fullpath'))), 'outputs');
     candidate = fullfile(outDir, 'ssm_step4_em_age_difference_results_subepoch76.mat');
 
     if isfile(candidate)
@@ -249,7 +253,8 @@ function [emResults, subjectTrajectory, sourceName] = load_or_run_joint_em_subep
         else
             subjectTrajectory = keep_last_subepoch_per_subject(S.rowTrajectory);
         end
-        sourceName = string(candidate);
+        [~, sourceBase, sourceExt] = fileparts(candidate);
+        sourceName = "outputs/" + string(sourceBase) + string(sourceExt);
         return;
     end
 
