@@ -17,4 +17,18 @@ function cfg = mfdb_config()
     cfg.method = 'unity';
 
     cfg.outputDir = fullfile(cfg.scriptRoot, 'outputs', 'mfdb_subject_level');
+    cfg.validationFile = fullfile(cfg.scriptRoot, 'outputs', 'mfdb_validation', ...
+        'mfdb_validation_results.mat');
+
+    % Sub-epoch MFDB settings. These are used only by the parallel
+    % sub-epoch pipeline and do not change the original 120 s subject files.
+    cfg.subEpochDurationSec = 30;
+    cfg.subEpochCount = 4;
+    cfg.subEpochTW = 4;
+    cfg.subEpochK = 7;
+    cfg.subEpochOutputDir = fullfile(cfg.scriptRoot, 'outputs', ...
+        'mfdb_subepoch_level');
+
+    assert(cfg.subEpochCount * cfg.subEpochDurationSec == cfg.epochDurationSec, ...
+        'Sub-epoch count and duration must sum to the original epoch duration.');
 end

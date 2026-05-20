@@ -13,6 +13,7 @@ StateSpaceAlpha/
   README.md
   SIMULATION_PLAN.md
   smoke_test_alpha_extraction.m
+  collapse_subepoch_alpha_table_for_ssm.m
   run_ssm_residual_sanity_check.m
   SS_age_pooled_iwp.m
   SS_age_diff.m
@@ -31,6 +32,11 @@ StateSpaceAlpha/
       plot_mfdb_alpha_power_vs_age.m
       plot_mfdb_alpha_power_difference_vs_age.m
       run_alpha_power_regression_from_saved_spectra.m
+      subepoch_mfdb_pipeline/
+        run_subject_mfdb_bootstrap_subepochs_for_id.m
+        run_subject_mfdb_bootstrap_subepochs_batch.m
+        smoke_test_alpha_extraction_subepochs.m
+        check_subepoch_consistency.m
     ssm_templates/
       ay_fft_filter.m
       EM_parameters_kim_2018.m
@@ -59,6 +65,7 @@ StateSpaceAlpha/
 - `references/core_inputs/plot_mfdb_alpha_power_vs_age.m`: current alpha-power age-window plotting conventions.
 - `references/core_inputs/plot_mfdb_alpha_power_difference_vs_age.m`: current alpha-power difference plotting conventions.
 - `references/core_inputs/run_alpha_power_regression_from_saved_spectra.m`: current OLS baseline that the SSM analysis is meant to replace or contextualize.
+- `references/core_inputs/subepoch_mfdb_pipeline/`: reference copies of the parallel 4 x 30 s MFDB scripts used to generate the collapsed sub-epoch alpha table.
 - `references/ssm_templates/ay_fft_filter.m`: main matrix-form Kalman filter, RTS smoother, and EM template.
 - `references/ssm_templates/EM_parameters_kim_2018.m`: Kim SSMT EM reference implementation copied from the cloned `sgallos/SSMT` repository.
 - `references/ssm_templates/computeAMI_SMI.m`: simpler one-dimensional smoother reference.
@@ -79,13 +86,14 @@ StateSpaceAlpha/
 2. Read `mfdb_subject_registry.csv` and load each subject's MFDB `.mat` file.
 3. Compute alpha power as already done in the existing MFDB code: integrate 8-13 Hz in linear power, then convert to dB.
 4. Build the response vector as subject-level alpha power in dB, with group and age as covariates.
-5. Use `SS_age_pooled_iwp.m` as the preserved Step 2 pooled 2-D IWP filter and RTS smoother reference.
-6. Run `run_ss_age_diff.m` for the Step 3 4-D baseline + CP-control difference model.
-7. Run `run_ssm_residual_sanity_check.m` to compare fitted residual scatter against MFDB observation uncertainty.
-8. Run `run_ss_age_diff_em.m` for the Step 4 EM-estimated IWP smoothness model, including the additive biological variance term.
-9. Run `run_ss_age_diff_bootstrap_simultaneous.m` for Step 5 two-stage subject + MFDB bootstrap simultaneous confidence bands.
-10. Validate the model with parametric bootstrap and identifiability checks before interpreting the fitted trajectory.
-11. Run `hgam_sensitivity.R` as a separate smoothness-prior cross-check.
+5. Optionally run `collapse_subepoch_alpha_table_for_ssm.m` after the 4 x 30 s sub-epoch MFDB pipeline finishes. This creates `alpha_table_for_ssm_subepochs_collapsed.csv`, which has the same 19-row format but uses empirical sub-epoch variability for `mfdb_var`.
+6. Use `SS_age_pooled_iwp.m` as the preserved Step 2 pooled 2-D IWP filter and RTS smoother reference.
+7. Run `run_ss_age_diff.m` for the Step 3 4-D baseline + CP-control difference model.
+8. Run `run_ssm_residual_sanity_check.m` to compare fitted residual scatter against MFDB observation uncertainty.
+9. Run `run_ss_age_diff_em.m` for the Step 4 EM-estimated IWP smoothness model, including the additive biological variance term.
+10. Run `run_ss_age_diff_bootstrap_simultaneous.m` for Step 5 two-stage subject + MFDB bootstrap simultaneous confidence bands.
+11. Validate the model with parametric bootstrap and identifiability checks before interpreting the fitted trajectory.
+12. Run `hgam_sensitivity.R` as a separate smoothness-prior cross-check.
 
 Step 3 run command:
 

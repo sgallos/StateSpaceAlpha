@@ -7,6 +7,10 @@
 clear; clc;
 
 %% Step 1: User-facing analysis parameters
+% Use alpha_table_for_ssm.csv for the current 120 s MFDB bootstrap.
+% A collapsed 4 x 30 s table can be fit by Step 3/4 now, but Step 5 still
+% needs a sub-epoch-aware bootstrap cache before it should be used there.
+alphaTableFileName = 'alpha_table_for_ssm.csv';
 nBootstrapIterations = 50;      % use 2000 for the final run
 qSource = "em";                 % "manual" or "em"
 bootstrapMode = "two-stage";    % "two-stage" or "mfdb-only"
@@ -22,7 +26,7 @@ rebuildCache = false;
 %% Step 2: Locate inputs
 repoRoot = fileparts(mfilename('fullpath'));
 outDir = fullfile(repoRoot, 'outputs');
-alphaTableFile = fullfile(outDir, 'alpha_table_for_ssm.csv');
+alphaTableFile = fullfile(outDir, alphaTableFileName);
 registryFile = fullfile(repoRoot, 'references', 'core_inputs', 'mfdb_subject_registry.csv');
 cacheFile = fullfile(outDir, 'boot_alpha_dB_cache.mat');
 
@@ -37,7 +41,7 @@ alphaTable = readtable(alphaTableFile, 'TextType', 'string');
 fprintf('Loaded alpha table: %s\n', alphaTableFile);
 
 %% Step 3: Choose fixed q values for bootstrap refits
-qSource = lower(string(qSource));
+qSource = lower(qSource);
 switch qSource
     case "manual"
         processNoiseQF0 = manualProcessNoiseQF0;
@@ -107,7 +111,8 @@ writetable(bandSummary, step5BandCsvFile);
 writetable(deltaDistributionTable, step5DistributionCsvFile);
 save(step5MatFile, 'bootResults', 'bandSummary', 'deltaDistributionTable', ...
     'nBootstrapIterations', 'qSource', 'qDescription', 'bootstrapMode', ...
-    'biologicalVariance', 'bandRange', 'rngSeed');
+    'biologicalVariance', 'bandRange', 'rngSeed', ...
+    'alphaTableFileName', 'alphaTableFile');
 
 fprintf('\nSaved Step 5 MAT results to %s\n', step5MatFile);
 fprintf('Saved Step 5 band summary to %s\n', step5BandCsvFile);

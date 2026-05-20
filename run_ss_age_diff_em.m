@@ -7,10 +7,15 @@
 
 clear; clc;
 
-%% Step 1: Locate the smoke-test alpha table
+%% Step 1: Locate the alpha table
 repoRoot = fileparts(mfilename('fullpath'));
 outDir = fullfile(repoRoot, 'outputs');
-alphaTableFile = fullfile(outDir, 'alpha_table_for_ssm.csv');
+
+% Choose which 19-row alpha table to fit.
+%   alpha_table_for_ssm.csv = original 120 s MFDB table
+%   alpha_table_for_ssm_subepochs_collapsed.csv = collapsed 4 x 30 s table
+alphaTableFileName = 'alpha_table_for_ssm.csv';
+alphaTableFile = fullfile(outDir, alphaTableFileName);
 
 if ~isfile(alphaTableFile)
     error(['Alpha table not found:\n%s\n\n' ...
@@ -58,7 +63,8 @@ multiStartSummary = build_multistart_summary(emResults);
 writetable(bestTrajectory, step4CsvFile);
 writetable(multiStartSummary, step4SummaryFile);
 save(step4MatFile, 'alphaTable', 'emResults', 'bestResult', ...
-    'bestTrajectory', 'multiStartSummary', 'emOptions');
+    'bestTrajectory', 'multiStartSummary', 'emOptions', ...
+    'alphaTableFileName', 'alphaTableFile');
 
 fprintf('\nSaved Step 4 trajectory CSV to %s\n', step4CsvFile);
 fprintf('Saved Step 4 multi-start summary to %s\n', step4SummaryFile);

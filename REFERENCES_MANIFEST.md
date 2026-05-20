@@ -13,6 +13,10 @@ These were copied from the current `MATLAB_Multitaper_Hz_Domain_BTS` pipeline:
 - `references/core_inputs/plot_mfdb_alpha_power_vs_age.m`
 - `references/core_inputs/plot_mfdb_alpha_power_difference_vs_age.m`
 - `references/core_inputs/run_alpha_power_regression_from_saved_spectra.m`
+- `references/core_inputs/subepoch_mfdb_pipeline/run_subject_mfdb_bootstrap_subepochs_for_id.m`
+- `references/core_inputs/subepoch_mfdb_pipeline/run_subject_mfdb_bootstrap_subepochs_batch.m`
+- `references/core_inputs/subepoch_mfdb_pipeline/smoke_test_alpha_extraction_subepochs.m`
+- `references/core_inputs/subepoch_mfdb_pipeline/check_subepoch_consistency.m`
 
 ## Included Documentation
 
@@ -47,6 +51,7 @@ These are the files to implement in this repo:
 - `run_ss_age_diff_em.m`
 - `run_ss_age_diff_bootstrap_simultaneous.m`
 - `smoke_test_alpha_extraction.m`
+- `collapse_subepoch_alpha_table_for_ssm.m`
 - `hgam_sensitivity.R`
 - `SIMULATION_PLAN.md`
 

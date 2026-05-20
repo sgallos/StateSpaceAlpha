@@ -17,10 +17,15 @@
 
 clear; clc;
 
-%% Step 1: Locate the smoke-test alpha table
+%% Step 1: Locate the alpha table
 repoRoot = fileparts(mfilename('fullpath'));
 outDir = fullfile(repoRoot, 'outputs');
-alphaTableFile = fullfile(outDir, 'alpha_table_for_ssm.csv');
+
+% Choose which 19-row alpha table to fit.
+%   alpha_table_for_ssm.csv = original 120 s MFDB table
+%   alpha_table_for_ssm_subepochs_collapsed.csv = collapsed 4 x 30 s table
+alphaTableFileName = 'alpha_table_for_ssm.csv';
+alphaTableFile = fullfile(outDir, alphaTableFileName);
 
 if ~isfile(alphaTableFile)
     error(['Alpha table not found:\n%s\n\n' ...
@@ -62,7 +67,7 @@ step3CsvFile = fullfile(outDir, 'ssm_step3_age_difference_trajectory.csv');
 
 writetable(mainResult.trajectory, step3CsvFile);
 save(step3MatFile, 'alphaTable', 'mainResult', 'qScalesF0', ...
-    'qScalesDelta', 'sensitivityResults');
+    'qScalesDelta', 'sensitivityResults', 'alphaTableFileName', 'alphaTableFile');
 
 fprintf('\nSaved Step 3 trajectory CSV to %s\n', step3CsvFile);
 fprintf('Saved Step 3 MAT results to %s\n', step3MatFile);
