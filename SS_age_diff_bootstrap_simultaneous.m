@@ -1,8 +1,10 @@
 function results = SS_age_diff_bootstrap_simultaneous(alphaTable, varargin)
 %SS_AGE_DIFF_BOOTSTRAP_SIMULTANEOUS Build MFDB bootstrap bands for delta(a).
 %
-% This Step 5 wrapper resamples one MFDB alpha-power draw per subject,
-% refits the fixed-q Step 3 SSM, and uses the empirical distribution of
+% This Step 5 wrapper can resample MFDB rows only, or do a two-stage
+% bootstrap that resamples subjects within group and then draws one MFDB
+% alpha-power row for each selected subject. It refits the fixed-q Step 3
+% SSM and uses the empirical distribution of
 % fitted CP-Control difference trajectories to compute pointwise and
 % simultaneous confidence bands.
 %
@@ -25,6 +27,9 @@ function results = SS_age_diff_bootstrap_simultaneous(alphaTable, varargin)
     addParameter(parser, 'qScaleDelta', 1, @(x) isnumeric(x) && isscalar(x) && isfinite(x) && x > 0);
     addParameter(parser, 'processNoiseQF0', [], @(x) isempty(x) || (isnumeric(x) && isscalar(x) && isfinite(x) && x > 0));
     addParameter(parser, 'processNoiseQDelta', [], @(x) isempty(x) || (isnumeric(x) && isscalar(x) && isfinite(x) && x > 0));
+    addParameter(parser, 'biologicalVariance', 0, @(x) isnumeric(x) && isscalar(x) && isfinite(x) && x >= 0);
+    addParameter(parser, 'bootstrapMode', "two-stage", @(x) ischar(x) || isstring(x));
+    addParameter(parser, 'duplicateAgeJitter', 1e-6, @(x) isnumeric(x) && isscalar(x) && x > 0);
     addParameter(parser, 'progressEvery', 100, @(x) isnumeric(x) && isscalar(x) && x >= 1);
     addParameter(parser, 'verbose', true, @(x) islogical(x) || isnumeric(x));
     parse(parser, varargin{:});
@@ -36,6 +41,10 @@ function results = SS_age_diff_bootstrap_simultaneous(alphaTable, varargin)
     opts.B = round(opts.B);
     opts.progressEvery = round(opts.progressEvery);
     opts.bandRange = double(opts.bandRange(:).');
+    opts.bootstrapMode = lower(string(opts.bootstrapMode));
+    if ~ismember(opts.bootstrapMode, ["two-stage", "mfdb-only"])
+        error('bootstrapMode must be "two-stage" or "mfdb-only".');
+    end
 
     data = prepare_model_data(alphaTable);
     qInit = compute_q_init(data.ageYears, data.alpha_dB);
@@ -65,35 +74,58 @@ function results = SS_age_diff_bootstrap_simultaneous(alphaTable, varargin)
     originalFit = SS_age_diff(data, ...
         'processNoiseQF0', processNoiseQF0, ...
         'processNoiseQDelta', processNoiseQDelta, ...
+        'biologicalVariance', opts.biologicalVariance, ...
         'verbose', false);
     ageGrid = originalFit.trajectory.ageYears(:).';
     originalDelta = originalFit.trajectory.deltaMean_dB(:).';
 
     deltaBootstrap = nan(opts.B, numel(ageGrid));
-    resampleIndices = nan(opts.B, nSubjects);
+    subjectResampleIndices = nan(opts.B, nSubjects);
+    mfdbResampleIndices = nan(opts.B, nSubjects);
     failedBootstrap = false(opts.B, 1);
     failureMessages = strings(opts.B, 1);
 
     if opts.verbose
         fprintf('Step 5 bootstrap: B = %d, subjects = %d, MFDB rows per subject = %d\n', ...
             opts.B, nSubjects, nAvailableBoot);
-        fprintf('Using fixed q_f0 = %.6g, q_delta = %.6g\n', processNoiseQF0, processNoiseQDelta);
+        fprintf('Bootstrap mode: %s\n', opts.bootstrapMode);
+        fprintf('Using fixed q_f0 = %.6g, q_delta = %.6g, biological variance = %.6g dB^2\n', ...
+            processNoiseQF0, processNoiseQDelta, opts.biologicalVariance);
     end
 
-    for b = 1:opts.B
-        thisDraw = randi(nAvailableBoot, [nSubjects, 1]);
-        resampleIndices(b, :) = thisDraw;
+    controlIdx = find(data.groupIndicator == 0);
+    cpIdx = find(data.groupIndicator == 1);
 
-        resampledTable = data(:, {'subjectID','groupLabel','ageYears','alpha_dB','mfdb_var'});
-        linearIndex = sub2ind(size(cache.bootAlphaDB), (1:nSubjects).', thisDraw);
+    for b = 1:opts.B
+        switch opts.bootstrapMode
+            case "two-stage"
+                bootControlIdx = controlIdx(randi(numel(controlIdx), [numel(controlIdx), 1]));
+                bootCpIdx = cpIdx(randi(numel(cpIdx), [numel(cpIdx), 1]));
+                bootSubjectIdx = [bootControlIdx; bootCpIdx];
+
+            case "mfdb-only"
+                bootSubjectIdx = (1:nSubjects).';
+        end
+
+        thisDraw = randi(nAvailableBoot, [numel(bootSubjectIdx), 1]);
+        subjectResampleIndices(b, 1:numel(bootSubjectIdx)) = bootSubjectIdx;
+        mfdbResampleIndices(b, 1:numel(bootSubjectIdx)) = thisDraw;
+
+        resampledTable = data(bootSubjectIdx, {'subjectID','groupLabel','ageYears','alpha_dB','mfdb_var'});
+        linearIndex = sub2ind(size(cache.bootAlphaDB), bootSubjectIdx, thisDraw);
         resampledTable.alpha_dB = cache.bootAlphaDB(linearIndex);
+        if opts.bootstrapMode == "two-stage"
+            resampledTable = jitter_duplicate_ages(resampledTable, opts.duplicateAgeJitter);
+        end
 
         try
             bootFit = SS_age_diff(resampledTable, ...
                 'processNoiseQF0', processNoiseQF0, ...
                 'processNoiseQDelta', processNoiseQDelta, ...
+                'biologicalVariance', opts.biologicalVariance, ...
                 'verbose', false);
-            deltaBootstrap(b, :) = bootFit.trajectory.deltaMean_dB(:).';
+            deltaBootstrap(b, :) = interp1(bootFit.trajectory.ageYears, ...
+                bootFit.trajectory.deltaMean_dB, ageGrid, 'linear', 'extrap');
         catch ME
             failedBootstrap(b) = true;
             failureMessages(b) = string(ME.message);
@@ -149,6 +181,8 @@ function results = SS_age_diff_bootstrap_simultaneous(alphaTable, varargin)
     diagnostics.qInit = qInit;
     diagnostics.processNoiseQF0 = processNoiseQF0;
     diagnostics.processNoiseQDelta = processNoiseQDelta;
+    diagnostics.biologicalVariance = opts.biologicalVariance;
+    diagnostics.bootstrapMode = opts.bootstrapMode;
     diagnostics.nRequestedBootstraps = opts.B;
     diagnostics.nValidBootstraps = sum(validBootstrapMask);
     diagnostics.nFailedBootstraps = sum(failedBootstrap);
@@ -171,7 +205,8 @@ function results = SS_age_diff_bootstrap_simultaneous(alphaTable, varargin)
     results.ageGrid = ageGrid;
     results.deltaBootstrap = deltaBootstrap;
     results.validBootstrapMask = validBootstrapMask;
-    results.resampleIndices = resampleIndices;
+    results.subjectResampleIndices = subjectResampleIndices;
+    results.mfdbResampleIndices = mfdbResampleIndices;
     results.deltaMean = deltaMean;
     results.deltaSD = deltaSD;
     results.deltaPointwiseLow = deltaPointwiseLow;
@@ -288,6 +323,21 @@ function validate_cache_alignment(data, cache, opts)
     end
     if ~isequal(double(cache.bandRange(:).'), double(opts.bandRange(:).'))
         error('Cache band range does not match requested band range. Rebuild the cache.');
+    end
+end
+
+function T = jitter_duplicate_ages(T, jitterAmount)
+    [~, sortIdx] = sortrows(T, {'ageYears', 'subjectID'});
+    T = T(sortIdx, :);
+    roundedAges = round(T.ageYears, 10);
+    uniqueAges = unique(roundedAges, 'stable');
+
+    for i = 1:numel(uniqueAges)
+        duplicateIdx = find(roundedAges == uniqueAges(i));
+        if numel(duplicateIdx) > 1
+            offsets = linspace(-jitterAmount, jitterAmount, numel(duplicateIdx)).';
+            T.ageYears(duplicateIdx) = T.ageYears(duplicateIdx) + offsets;
+        end
     end
 end
 

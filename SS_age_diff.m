@@ -25,6 +25,7 @@ function results = SS_age_diff(subjectTable, varargin)
     addParameter(parser, 'processNoiseQDelta', [], @(x) isempty(x) || (isnumeric(x) && isscalar(x) && isfinite(x) && x > 0));
     addParameter(parser, 'initialCovarianceScale', 100, @(x) isnumeric(x) && isscalar(x) && isfinite(x) && x > 0);
     addParameter(parser, 'minObservationVariance', 1e-6, @(x) isnumeric(x) && isscalar(x) && isfinite(x) && x > 0);
+    addParameter(parser, 'biologicalVariance', 0, @(x) isnumeric(x) && isscalar(x) && isfinite(x) && x >= 0);
     addParameter(parser, 'verbose', true, @(x) islogical(x) || isnumeric(x));
     parse(parser, varargin{:});
     opts = parser.Results;
@@ -39,7 +40,9 @@ function results = SS_age_diff(subjectTable, varargin)
 
     ageYears = data.ageYears(:);
     alphaDB = data.alpha_dB(:);
-    observationVariance = max(data.mfdb_var(:), opts.minObservationVariance);
+    mfdbObservationVariance = data.mfdb_var(:);
+    biologicalVariance = opts.biologicalVariance;
+    observationVariance = max(mfdbObservationVariance + biologicalVariance, opts.minObservationVariance);
     groupIndicator = make_group_indicator(data.groupLabel);
     ageGaps = diff(ageYears);
 
@@ -190,6 +193,9 @@ function results = SS_age_diff(subjectTable, varargin)
     diagnostics.qScaleDelta = opts.qScaleDelta;
     diagnostics.processNoiseQF0 = processNoiseQF0;
     diagnostics.processNoiseQDelta = processNoiseQDelta;
+    diagnostics.biologicalVariance = biologicalVariance;
+    diagnostics.mfdbObservationVariance = mfdbObservationVariance;
+    diagnostics.totalObservationVariance = observationVariance;
     diagnostics.initialState = initialState;
     diagnostics.initialCovariance = initialCovariance;
     diagnostics.ageGaps = ageGaps;
@@ -221,7 +227,8 @@ function results = SS_age_diff(subjectTable, varargin)
         fprintf('Age span: %.3f to %.3f years\n', min(ageYears), max(ageYears));
         fprintf('q_init = %.6g | q_f0 = %.6g | q_delta = %.6g\n', ...
             qInit, processNoiseQF0, processNoiseQDelta);
-        fprintf('Observation variance range: %.6g to %.6g dB^2\n', ...
+        fprintf('Biological variance = %.6g dB^2\n', biologicalVariance);
+        fprintf('Total observation variance range: %.6g to %.6g dB^2\n', ...
             min(observationVariance), max(observationVariance));
     end
 end

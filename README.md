@@ -13,6 +13,7 @@ StateSpaceAlpha/
   README.md
   SIMULATION_PLAN.md
   smoke_test_alpha_extraction.m
+  run_ssm_residual_sanity_check.m
   SS_age_pooled_iwp.m
   SS_age_diff.m
   SS_age_diff_em.m
@@ -80,10 +81,11 @@ StateSpaceAlpha/
 4. Build the response vector as subject-level alpha power in dB, with group and age as covariates.
 5. Use `SS_age_pooled_iwp.m` as the preserved Step 2 pooled 2-D IWP filter and RTS smoother reference.
 6. Run `run_ss_age_diff.m` for the Step 3 4-D baseline + CP-control difference model.
-7. Run `run_ss_age_diff_em.m` for the Step 4 EM-estimated IWP smoothness model.
-8. Run `run_ss_age_diff_bootstrap_simultaneous.m` for Step 5 MFDB bootstrap simultaneous confidence bands.
-9. Validate the model with parametric bootstrap and identifiability checks before interpreting the fitted trajectory.
-10. Run `hgam_sensitivity.R` as a separate smoothness-prior cross-check.
+7. Run `run_ssm_residual_sanity_check.m` to compare fitted residual scatter against MFDB observation uncertainty.
+8. Run `run_ss_age_diff_em.m` for the Step 4 EM-estimated IWP smoothness model, including the additive biological variance term.
+9. Run `run_ss_age_diff_bootstrap_simultaneous.m` for Step 5 two-stage subject + MFDB bootstrap simultaneous confidence bands.
+10. Validate the model with parametric bootstrap and identifiability checks before interpreting the fitted trajectory.
+11. Run `hgam_sensitivity.R` as a separate smoothness-prior cross-check.
 
 Step 3 run command:
 
@@ -114,7 +116,7 @@ Current `run_ss_age_diff_em.m` runs the EM-estimated 4-D model and writes:
 - `outputs/ssm_step4_em_multistart_summary.csv`
 - `outputs/ssm_step4_em_delta_primary.png`
 - `outputs/ssm_step4_em_loglik_history.png`
-- `outputs/ssm_step4_em_q_history.png`
+- `outputs/ssm_step4_em_hyperparameter_history.png`
 - `outputs/ssm_step4_em_vs_step3_sensitivity.png`, if Step 3 outputs are present
 
 Step 5 run command:
@@ -124,7 +126,7 @@ cd('/Users/gallo/projects/StateSpaceAlpha')
 run_ss_age_diff_bootstrap_simultaneous
 ```
 
-Current `run_ss_age_diff_bootstrap_simultaneous.m` runs the MFDB-row bootstrap with fixed q values and writes:
+Current `run_ss_age_diff_bootstrap_simultaneous.m` runs the two-stage subject-within-group + MFDB-row bootstrap with fixed q and biological-variance values and writes:
 
 - `outputs/boot_alpha_dB_cache.mat`
 - `outputs/ssm_step5_bootstrap_simultaneous_results.mat`

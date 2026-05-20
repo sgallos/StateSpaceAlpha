@@ -8,11 +8,13 @@ clear; clc;
 
 %% Step 1: User-facing analysis parameters
 nBootstrapIterations = 50;      % use 2000 for the final run
-qSource = "manual";             % "manual" or "em"
+qSource = "em";                 % "manual" or "em"
+bootstrapMode = "two-stage";    % "two-stage" or "mfdb-only"
 manualQScaleF0 = 1;
 manualQScaleDelta = 1;
 manualProcessNoiseQF0 = [];
 manualProcessNoiseQDelta = [];
+manualBiologicalVariance = 2.451431;
 bandRange = [8 13];
 rngSeed = 1;
 rebuildCache = false;
@@ -42,6 +44,7 @@ switch qSource
         processNoiseQDelta = manualProcessNoiseQDelta;
         qScaleF0 = manualQScaleF0;
         qScaleDelta = manualQScaleDelta;
+        biologicalVariance = manualBiologicalVariance;
         qDescription = sprintf('manual q scales: f0 %.3g, delta %.3g', qScaleF0, qScaleDelta);
 
     case "em"
@@ -53,14 +56,21 @@ switch qSource
         S = load(step4MatFile, 'emResults');
         processNoiseQF0 = S.emResults.q_f0_em;
         processNoiseQDelta = S.emResults.q_delta_em;
+        if isfield(S.emResults, 'sigmaBio_em')
+            biologicalVariance = S.emResults.sigmaBio_em;
+        else
+            error('Step 4 EM results do not include sigmaBio_em. Rerun run_ss_age_diff_em.');
+        end
         qScaleF0 = 1;
         qScaleDelta = 1;
-        qDescription = sprintf('EM q values: f0 %.3g, delta %.3g', ...
-            processNoiseQF0, processNoiseQDelta);
+        qDescription = sprintf('EM q values: f0 %.3g, delta %.3g, sigmaBio %.3g', ...
+            processNoiseQF0, processNoiseQDelta, biologicalVariance);
 
-        if isfield(S.emResults, 'hitQFloor') && (S.emResults.hitQFloor || S.emResults.hitQCeiling)
+        if isfield(S.emResults, 'hitQFloor') && ...
+                (S.emResults.hitQFloor || S.emResults.hitQCeiling || ...
+                S.emResults.hitSigmaBioFloor || S.emResults.hitSigmaBioCeiling)
             warning(['Step 4 EM q values hit a boundary. The bootstrap will run, but these ' ...
-                'q values should be treated as diagnostic rather than stable estimates.']);
+                'hyperparameters should be treated cautiously.']);
         end
 
     otherwise
@@ -81,6 +91,8 @@ bootResults = SS_age_diff_bootstrap_simultaneous(alphaTable, ...
     'qScaleDelta', qScaleDelta, ...
     'processNoiseQF0', processNoiseQF0, ...
     'processNoiseQDelta', processNoiseQDelta, ...
+    'biologicalVariance', biologicalVariance, ...
+    'bootstrapMode', bootstrapMode, ...
     'verbose', true);
 
 %% Step 5: Save Step 5 outputs
@@ -94,7 +106,8 @@ deltaDistributionTable = make_delta_distribution_table(bootResults);
 writetable(bandSummary, step5BandCsvFile);
 writetable(deltaDistributionTable, step5DistributionCsvFile);
 save(step5MatFile, 'bootResults', 'bandSummary', 'deltaDistributionTable', ...
-    'nBootstrapIterations', 'qSource', 'qDescription', 'bandRange', 'rngSeed');
+    'nBootstrapIterations', 'qSource', 'qDescription', 'bootstrapMode', ...
+    'biologicalVariance', 'bandRange', 'rngSeed');
 
 fprintf('\nSaved Step 5 MAT results to %s\n', step5MatFile);
 fprintf('Saved Step 5 band summary to %s\n', step5BandCsvFile);
