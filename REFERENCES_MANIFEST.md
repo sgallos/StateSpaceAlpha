@@ -40,8 +40,10 @@ These are reference-only templates, not production code for this project:
 These are the files to implement in this repo:
 
 - `SS_age_diff.m`
+- `SS_age_diff_em.m`
 - `SS_age_pooled_iwp.m`
 - `run_ss_age_diff.m`
+- `run_ss_age_diff_em.m`
 - `smoke_test_alpha_extraction.m`
 - `hgam_sensitivity.R`
 - `SIMULATION_PLAN.md`
