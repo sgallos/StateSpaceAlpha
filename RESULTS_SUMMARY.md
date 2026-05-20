@@ -58,12 +58,18 @@ Interpretation:
   raw 19-subject alpha-vs-age scatter before modeling.
 - [primary_delta_trajectory.png](4_figures/primary_delta_trajectory.png):
   primary fixed-hyperparameter delta(a) posterior mean and credible band.
+- [subjects_with_trajectories.png](4_figures/subjects_with_trajectories.png):
+  Control and CP posterior trajectories with the 19 subject-level alpha values
+  and their within-subject/sub-epoch error bars overlaid.
 - [sensitivity_all_six_overlay.png](4_figures/sensitivity_all_six_overlay.png):
   posterior means from all six no-resampling runs.
 - [sensitivity_all_six_bands.png](4_figures/sensitivity_all_six_bands.png):
   each run shown separately with its posterior credible band.
 - [sensitivity_profile_loglik_heatmap.png](4_figures/sensitivity_profile_loglik_heatmap.png):
   Profile-Likelihood surface for `q_f0` and `q_delta`.
+- [em_convergence_diagnostics.png](4_figures/em_convergence_diagnostics.png):
+  EM iteration histories explaining which EM strategies converged cleanly and
+  which should be treated as diagnostics.
 
 ## Scientific Reading
 

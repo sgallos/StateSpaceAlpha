@@ -26,8 +26,10 @@ Analysis runners:
 - `RUN_ME_StateSpaceAlpha.m`
 - `3_run_analyses/run_ss_age_diff.m`
 - `3_run_analyses/plot_subject_level_alpha_vs_age.m`
+- `3_run_analyses/plot_subjects_with_trajectories.m`
 - `3_run_analyses/run_ssm_posterior_no_resampling.m`
 - `3_run_analyses/run_ssm_no_resampling_matrix.m`
+- `3_run_analyses/plot_em_convergence_diagnostics.m`
 - `3_run_analyses/run_ss_age_diff_em.m`
 - `3_run_analyses/run_ss_age_diff_em_fixed_sigma.m`
 - `3_run_analyses/run_ss_age_diff_em_subepoch76.m`
@@ -68,9 +70,11 @@ Figures:
 - `4_figures/alpha_table_subepoch_vs_120s_comparison.png`
 - `4_figures/subject_level_alpha_vs_age.png`
 - `4_figures/primary_delta_trajectory.png`
+- `4_figures/subjects_with_trajectories.png`
 - `4_figures/sensitivity_all_six_overlay.png`
 - `4_figures/sensitivity_all_six_bands.png`
 - `4_figures/sensitivity_profile_loglik_heatmap.png`
+- `4_figures/em_convergence_diagnostics.png`
 - `4_figures/em_loglik_history.png`
 
 Small CSV outputs:

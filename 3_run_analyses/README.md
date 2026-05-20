@@ -13,8 +13,12 @@ Key scripts:
 
 - `run_ssm_no_resampling_matrix.m`: main six-run no-subject-resampling
   sensitivity matrix.
+- `plot_em_convergence_diagnostics.m`: convergence diagnostic for the four
+  EM-based strategies in the sensitivity matrix.
 - `plot_subject_level_alpha_vs_age.m`: raw 19-subject alpha-vs-age scatter
   before modeling.
+- `plot_subjects_with_trajectories.m`: subject-level alpha values with
+  Control and CP posterior trajectories overlaid.
 - `run_ssm_posterior_no_resampling.m`: primary fixed-hyperparameter posterior
   workflow.
 - `run_ss_age_diff_em_fixed_sigma.m`: EM q with fixed empirical sigmaBio.

@@ -33,6 +33,15 @@ Takeaway: the trajectory is consistently negative (CP < Control) across the
 whole age range, with the band excluding zero between about ages 12.2 and
 14.9 years in the primary fixed-hyperparameter run.
 
+## subjects_with_trajectories.png
+
+The 19 subjects plotted as points with within-subject/sub-epoch error bars,
+overlaid against the posterior Control trajectory `f0(a)` and CP trajectory
+`f0(a) + delta(a)`.
+Takeaway: this is the concrete data-plus-model view. The Control trajectory is
+visibly higher than the CP trajectory, while the subject points show which
+children sit above or below their group's posterior expectation.
+
 ## sensitivity_all_six_overlay.png
 
 Six hyperparameter selection strategies overlaid on the same axes.
@@ -52,3 +61,12 @@ Profile-Likelihood strategy.
 Takeaway: the surface favors very smooth `delta(a)` and indicates that
 smoothness is not sharply determined by the data at n = 19, which is expected
 for this cohort size.
+
+## em_convergence_diagnostics.png
+
+Iteration histories for the four EM-based strategies. Each column is one
+strategy, with log-likelihood, smoothness parameters, and `sigmaBio` shown
+from top to bottom.
+Takeaway: this figure shows why some EM strategies are useful diagnostics
+rather than primary analyses: clean runs should have monotonic log-likelihood,
+settled `q` values, and no boundary hit.
