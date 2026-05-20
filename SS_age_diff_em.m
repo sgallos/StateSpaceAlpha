@@ -30,14 +30,25 @@ function results = SS_age_diff_em(subjectTable, varargin)
         @(x) isempty(x) || (isnumeric(x) && isscalar(x) && isfinite(x) && x >= 0));
     addParameter(parser, 'sigmaBioFloor', 1e-6, @(x) isnumeric(x) && isscalar(x) && x >= 0);
     addParameter(parser, 'sigmaBioCeiling', 100, @(x) isnumeric(x) && isscalar(x) && x > 0);
+    addParameter(parser, 'fixSigmaBio', false, @(x) islogical(x) || isnumeric(x));
     addParameter(parser, 'initialCovarianceScale', 100, @(x) isnumeric(x) && isscalar(x) && x > 0);
     addParameter(parser, 'minObservationVariance', 1e-6, @(x) isnumeric(x) && isscalar(x) && x > 0);
     addParameter(parser, 'useApproximateMstep', false, @(x) islogical(x) || isnumeric(x));
+    addParameter(parser, 'allowRepeatedSubjectRows', false, @(x) islogical(x) || isnumeric(x));
     addParameter(parser, 'verbose', true, @(x) islogical(x) || isnumeric(x));
     parse(parser, varargin{:});
     opts = parser.Results;
     opts.useApproximateMstep = logical(opts.useApproximateMstep);
+    opts.allowRepeatedSubjectRows = logical(opts.allowRepeatedSubjectRows);
+    opts.fixSigmaBio = logical(opts.fixSigmaBio);
     opts.verbose = logical(opts.verbose);
+
+    if opts.allowRepeatedSubjectRows && ~opts.useApproximateMstep
+        warning(['Repeated-subepoch mode uses deterministic within-subject transitions. ' ...
+            'Switching to the approximate M-step because the exact joint-precision ' ...
+            'lag-one covariance path assumes positive process covariance for every transition.']);
+        opts.useApproximateMstep = true;
+    end
 
     data = prepare_model_data(subjectTable, opts);
     qInit = compute_q_init(data.ageYears, data.alpha_dB);
@@ -68,10 +79,18 @@ function results = SS_age_diff_em(subjectTable, varargin)
 
     if opts.verbose
         fprintf('SS_age_diff_em Step 4 EM setup\n');
-        fprintf('Subjects: %d | Control: %d | CP: %d\n', ...
-            height(data), sum(data.groupIndicator == 0), sum(data.groupIndicator == 1));
+        fprintf('Rows: %d | Unique subjects: %d | Control rows: %d | CP rows: %d\n', ...
+            height(data), numel(unique(data.subjectID)), ...
+            sum(data.groupIndicator == 0), sum(data.groupIndicator == 1));
         fprintf('q_init heuristic = %.6g\n', qInit);
         fprintf('initial sigmaBio = %.6g dB^2\n', baseInitialSigmaBio);
+        if opts.allowRepeatedSubjectRows
+            fprintf(['Repeated-subepoch mode: within-subject rows use identity transition ' ...
+                'and zero process noise; q updates use only between-subject age transitions.\n']);
+        end
+        if opts.fixSigmaBio
+            fprintf('Fixed sigmaBio mode: EM estimates q_f0 and q_delta only.\n');
+        end
         if opts.useApproximateMstep
             fprintf('M-step mode: approximate, without lag-one covariance.\n');
         else
@@ -158,15 +177,26 @@ function startResult = run_single_em_start(data, qF0Start, qDeltaStart, sigmaBio
 
         qF0New = clamp_q(qF0New, opts);
         qDeltaNew = clamp_q(qDeltaNew, opts);
-        sigmaBioNew = clamp_sigma_bio(sigmaBioNew, opts);
+        if opts.fixSigmaBio
+            sigmaBioNew = sigmaBio;
+            thisMstepDiagnostics.fixedSigmaBio = true;
+        else
+            sigmaBioNew = clamp_sigma_bio(sigmaBioNew, opts);
+            thisMstepDiagnostics.fixedSigmaBio = false;
+        end
         qNewHistory(iter, :) = [qF0New qDeltaNew];
         sigmaBioNewHistory(iter) = sigmaBioNew;
         mstepDiagnostics{iter} = thisMstepDiagnostics;
 
-        denominator = max([qF0, qDelta, sigmaBio], ...
-            [opts.qFloor, opts.qFloor, opts.sigmaBioFloor]);
-        relativeChange = max(abs([qF0New - qF0, qDeltaNew - qDelta, sigmaBioNew - sigmaBio]) ./ ...
-            denominator);
+        if opts.fixSigmaBio
+            denominator = max([qF0, qDelta], [opts.qFloor, opts.qFloor]);
+            relativeChange = max(abs([qF0New - qF0, qDeltaNew - qDelta]) ./ denominator);
+        else
+            denominator = max([qF0, qDelta, sigmaBio], ...
+                [opts.qFloor, opts.qFloor, opts.sigmaBioFloor]);
+            relativeChange = max(abs([qF0New - qF0, qDeltaNew - qDelta, sigmaBioNew - sigmaBio]) ./ ...
+                denominator);
+        end
         relativeChangeHistory(iter) = relativeChange;
 
         if opts.verbose
@@ -258,8 +288,13 @@ function fit = run_filter_smoother_4d(data, processNoiseQF0, processNoiseQDelta,
             pPrior = initialCovariance;
         else
             h = ageYears(k) - ageYears(k - 1);
-            Ak = make_iwp_transition_4d(h);
-            Qk = make_iwp_process_covariance_4d(h, processNoiseQF0, processNoiseQDelta);
+            if is_same_subject_transition(data, k) && opts.allowRepeatedSubjectRows
+                Ak = eye(stateDimension);
+                Qk = zeros(stateDimension);
+            else
+                Ak = make_iwp_transition_4d(h);
+                Qk = make_iwp_process_covariance_4d(h, processNoiseQF0, processNoiseQDelta);
+            end
             transitionMatrix(:, :, k - 1) = Ak;
             processCovariance(:, :, k - 1) = Qk;
 
@@ -355,8 +390,14 @@ function [qF0New, qDeltaNew, sigmaBioNew, diagnostics] = update_hyperparameters_
     contributionDelta = nan(nTransitions, 1);
     rawTraceF0 = nan(nTransitions, 1);
     rawTraceDelta = nan(nTransitions, 1);
+    isAgeTransition = true(nTransitions, 1);
 
     for k = 1:nTransitions
+        if is_same_subject_transition(data, k + 1) && opts.allowRepeatedSubjectRows
+            isAgeTransition(k) = false;
+            continue;
+        end
+
         h = data.ageYears(k + 1) - data.ageYears(k);
         Ak = fit.transitionMatrix(:, :, k);
         baseQ = make_iwp_base_covariance(h);
@@ -384,8 +425,13 @@ function [qF0New, qDeltaNew, sigmaBioNew, diagnostics] = update_hyperparameters_
         contributionDelta(k) = 0.5 * rawTraceDelta(k);
     end
 
-    qF0New = sum(max(contributionF0, 0)) / nTransitions;
-    qDeltaNew = sum(max(contributionDelta, 0)) / nTransitions;
+    nAgeTransitions = sum(isAgeTransition);
+    if nAgeTransitions < 1
+        error('No between-subject age transitions are available for q updates.');
+    end
+
+    qF0New = sum(max(contributionF0(isAgeTransition), 0)) / nAgeTransitions;
+    qDeltaNew = sum(max(contributionDelta(isAgeTransition), 0)) / nAgeTransitions;
 
     residualVarianceTerms = nan(nSubjects, 1);
     for k = 1:nSubjects
@@ -404,6 +450,8 @@ function [qF0New, qDeltaNew, sigmaBioNew, diagnostics] = update_hyperparameters_
     diagnostics.contributionDelta = contributionDelta;
     diagnostics.rawTraceF0 = rawTraceF0;
     diagnostics.rawTraceDelta = rawTraceDelta;
+    diagnostics.isAgeTransition = isAgeTransition;
+    diagnostics.nAgeTransitions = nAgeTransitions;
     diagnostics.residualVarianceTerms = residualVarianceTerms;
     diagnostics.sigmaBioRaw = sigmaBioRaw;
     diagnostics.anyNegativeContribution = any(contributionF0 < -1e-8) || any(contributionDelta < -1e-8);
@@ -489,6 +537,7 @@ function trajectory = build_trajectory_table(data, observationVariance, smoothed
 
     trajectory = table( ...
         data.subjectID, ...
+        data.subepochIdx, ...
         data.groupLabel, ...
         data.groupIndicator, ...
         data.ageYears, ...
@@ -508,7 +557,7 @@ function trajectory = build_trajectory_table(data, observationVariance, smoothed
         cpMean + 1.96 * cpSD(:), ...
         smoothedState(2, :).', ...
         smoothedState(4, :).', ...
-        'VariableNames', {'subjectID','groupLabel','groupIndicator','ageYears','alpha_dB', ...
+        'VariableNames', {'subjectID','subepochIdx','groupLabel','groupIndicator','ageYears','alpha_dB', ...
         'observationVariance','baselineMean_dB','baselineSD_dB','baselineCILow_dB', ...
         'baselineCIHigh_dB','deltaMean_dB','deltaSD_dB','deltaCILow_dB', ...
         'deltaCIHigh_dB','cpMean_dB','cpSD_dB','cpCILow_dB','cpCIHigh_dB', ...
@@ -519,17 +568,28 @@ function data = prepare_model_data(subjectTable, opts)
     data = standardize_subject_table(subjectTable);
     validMask = isfinite(data.ageYears) & isfinite(data.alpha_dB) & isfinite(data.mfdb_var);
     data = data(validMask, :);
-    data = sortrows(data, {'ageYears', 'subjectID'});
+    data = sortrows(data, {'ageYears', 'subjectID', 'subepochIdx'});
 
     if height(data) < 4
-        error('SS_age_diff_em needs at least 4 valid subjects. Found %d.', height(data));
+        error('SS_age_diff_em needs at least 4 valid rows. Found %d.', height(data));
     end
 
     data.groupIndicator = make_group_indicator(data.groupLabel);
 
     ageGaps = diff(data.ageYears);
-    if any(ageGaps <= 0)
-        error('Subject ages must be strictly increasing after sorting. Duplicate or reversed ages found.');
+    if opts.allowRepeatedSubjectRows
+        validate_repeated_subject_rows(data);
+        for k = 2:height(data)
+            if is_same_subject_transition(data, k)
+                if abs(ageGaps(k - 1)) > 1e-10
+                    error('Repeated rows for %s do not have identical ages.', data.subjectID(k));
+                end
+            elseif ageGaps(k - 1) <= 0
+                error('Between-subject ages must be strictly increasing after sorting.');
+            end
+        end
+    elseif any(ageGaps <= 0)
+        error('Subject ages must be strictly increasing after sorting. Use allowRepeatedSubjectRows=true for sub-epoch rows.');
     end
 
     nCP = sum(data.groupIndicator == 1);
@@ -543,6 +603,8 @@ function data = standardize_subject_table(subjectTable)
     names = subjectTable.Properties.VariableNames;
 
     subjectID = get_table_column(subjectTable, names, {'subjectID', 'SubjectID'});
+    subepochIdx = get_optional_table_column(subjectTable, names, {'subepochIdx', 'SubEpochIdx', 'subEpochIdx'}, ...
+        ones(height(subjectTable), 1));
     groupLabel = get_table_column(subjectTable, names, {'groupLabel', 'Group', 'GroupLabel'});
     ageYears = get_table_column(subjectTable, names, {'ageYears', 'AgeYears'});
     alphaDB = get_table_column(subjectTable, names, {'alpha_dB', 'AlphaPower_dB', 'AlphaPowerDB'});
@@ -550,11 +612,12 @@ function data = standardize_subject_table(subjectTable)
 
     data = table( ...
         string(subjectID(:)), ...
+        double(subepochIdx(:)), ...
         string(groupLabel(:)), ...
         double(ageYears(:)), ...
         double(alphaDB(:)), ...
         double(mfdbVar(:)), ...
-        'VariableNames', {'subjectID','groupLabel','ageYears','alpha_dB','mfdb_var'});
+        'VariableNames', {'subjectID','subepochIdx','groupLabel','ageYears','alpha_dB','mfdb_var'});
 end
 
 function values = get_table_column(T, allNames, candidates)
@@ -567,6 +630,37 @@ function values = get_table_column(T, allNames, candidates)
         end
     end
     error('Missing required table variable. Tried: %s', strjoin(candidates, ', '));
+end
+
+function values = get_optional_table_column(T, allNames, candidates, defaultValues)
+    values = defaultValues;
+    for i = 1:numel(candidates)
+        idx = find(strcmp(allNames, candidates{i}), 1, 'first');
+        if ~isempty(idx)
+            values = T.(allNames{idx});
+            return;
+        end
+    end
+end
+
+function validate_repeated_subject_rows(data)
+    [G, subjectIDs] = findgroups(data.subjectID);
+    for i = 1:numel(subjectIDs)
+        rows = find(G == i);
+        if numel(unique(data.ageYears(rows))) ~= 1
+            error('Subject %s has multiple age values.', subjectIDs(i));
+        end
+        if numel(unique(data.groupLabel(rows))) ~= 1
+            error('Subject %s has multiple group labels.', subjectIDs(i));
+        end
+        if any(diff(data.subepochIdx(rows)) <= 0)
+            error('Subject %s subepochIdx values must be strictly increasing.', subjectIDs(i));
+        end
+    end
+end
+
+function tf = is_same_subject_transition(data, k)
+    tf = k > 1 && data.subjectID(k) == data.subjectID(k - 1);
 end
 
 function groupIndicator = make_group_indicator(groupLabel)

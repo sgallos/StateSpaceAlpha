@@ -48,10 +48,14 @@ These are the files to implement in this repo:
 - `SS_age_diff_bootstrap_simultaneous.m`
 - `SS_age_pooled_iwp.m`
 - `run_ss_age_diff.m`
+- `run_ssm_posterior_no_resampling.m`
 - `run_ss_age_diff_em.m`
+- `run_ss_age_diff_em_fixed_sigma.m`
+- `run_ss_age_diff_em_subepoch76.m`
 - `run_ss_age_diff_bootstrap_simultaneous.m`
 - `smoke_test_alpha_extraction.m`
 - `collapse_subepoch_alpha_table_for_ssm.m`
+- `estimate_sigmaBio_from_subepochs.m`
 - `hgam_sensitivity.R`
 - `SIMULATION_PLAN.md`
 

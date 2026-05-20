@@ -90,10 +90,13 @@ StateSpaceAlpha/
 6. Use `SS_age_pooled_iwp.m` as the preserved Step 2 pooled 2-D IWP filter and RTS smoother reference.
 7. Run `run_ss_age_diff.m` for the Step 3 4-D baseline + CP-control difference model.
 8. Run `run_ssm_residual_sanity_check.m` to compare fitted residual scatter against MFDB observation uncertainty.
-9. Run `run_ss_age_diff_em.m` for the Step 4 EM-estimated IWP smoothness model, including the additive biological variance term.
-10. Run `run_ss_age_diff_bootstrap_simultaneous.m` for Step 5 two-stage subject + MFDB bootstrap simultaneous confidence bands.
-11. Validate the model with parametric bootstrap and identifiability checks before interpreting the fitted trajectory.
-12. Run `hgam_sensitivity.R` as a separate smoothness-prior cross-check.
+9. Run `run_ssm_posterior_no_resampling.m` for the primary SSM posterior workflow. This fixes hyperparameters, uses the smoother posterior covariance for the delta(a) credible band, and does not resample subjects.
+10. Run `run_ss_age_diff_em.m` for the Step 4 EM-estimated IWP smoothness diagnostic, including the additive biological variance term.
+11. Optionally run `run_ss_age_diff_em_fixed_sigma.m` as a Path B diagnostic that estimates a fixed `sigmaBio` from sub-epoch structure, then holds it fixed while EM estimates only `q_f0` and `q_delta`.
+12. Optionally run `run_ss_age_diff_em_subepoch76.m` as a diagnostic Step 4 variant that feeds the 76 sub-epoch rows directly into the SSM with identity transitions within each subject. This is an identifiability diagnostic, not the default reporting path.
+13. Run `run_ss_age_diff_bootstrap_simultaneous.m` for Step 5 two-stage subject + MFDB bootstrap simultaneous confidence bands if a bootstrap sensitivity analysis is needed.
+14. Validate the model with parametric bootstrap and identifiability checks before interpreting the fitted trajectory.
+15. Run `hgam_sensitivity.R` as a separate smoothness-prior cross-check.
 
 Step 3 run command:
 
@@ -109,6 +112,22 @@ Current `run_ss_age_diff.m` runs the Step 3 model and writes:
 - `outputs/ssm_step3_baseline_cp_overlay.png`
 - `outputs/ssm_step3_delta_primary.png`
 - `outputs/ssm_step3_delta_q_sensitivity.png`
+
+Primary no-resampling posterior command:
+
+```matlab
+cd('/Users/gallo/projects/StateSpaceAlpha')
+run_ssm_posterior_no_resampling
+```
+
+Current `run_ssm_posterior_no_resampling.m` loads the collapsed 4 x 30 s sub-epoch alpha table, estimates a fixed `sigmaBio` from the 76-row sub-epoch table, runs `SS_age_diff.m` once at fixed hyperparameters, and takes the delta(a) credible band directly from the smoother posterior covariance. It writes:
+
+- `outputs/ssm_posterior_no_resampling_results.mat`
+- `outputs/ssm_posterior_no_resampling_primary_trajectory.csv`
+- `outputs/ssm_posterior_no_resampling_sensitivity_summary.csv`
+- `outputs/ssm_posterior_no_resampling_sigmaBio_subject_diagnostics.csv`
+- `outputs/ssm_posterior_delta_primary_no_resampling.png`
+- `outputs/ssm_posterior_delta_sensitivity_no_resampling.png`
 
 Step 4 run command:
 
@@ -126,6 +145,42 @@ Current `run_ss_age_diff_em.m` runs the EM-estimated 4-D model and writes:
 - `outputs/ssm_step4_em_loglik_history.png`
 - `outputs/ssm_step4_em_hyperparameter_history.png`
 - `outputs/ssm_step4_em_vs_step3_sensitivity.png`, if Step 3 outputs are present
+
+Step 4 sub-epoch diagnostic command:
+
+```matlab
+cd('/Users/gallo/projects/StateSpaceAlpha')
+run_ss_age_diff_em_subepoch76
+```
+
+Current `run_ss_age_diff_em_subepoch76.m` loads `outputs/alpha_table_for_ssm_subepochs.csv` if present, or copies it from the upstream multitaper output folder if needed. It uses `allowRepeatedSubjectRows=true`, identity transitions for repeated sub-epochs from the same subject, and the approximate M-step because same-subject transitions have zero process covariance. It writes:
+
+- `outputs/ssm_step4_em_age_difference_results_subepoch76.mat`
+- `outputs/ssm_step4_em_age_difference_trajectory_subepoch76.csv`
+- `outputs/ssm_step4_em_age_difference_subject_trajectory_subepoch76.csv`
+- `outputs/ssm_step4_em_multistart_summary_subepoch76.csv`
+- `outputs/ssm_step4_em_delta_primary_subepoch76.png`
+- `outputs/ssm_step4_em_loglik_history_subepoch76.png`
+- `outputs/ssm_step4_em_hyperparameter_history_subepoch76.png`
+
+Step 4 fixed-sigma diagnostic command:
+
+```matlab
+cd('/Users/gallo/projects/StateSpaceAlpha')
+run_ss_age_diff_em_fixed_sigma
+```
+
+Current `run_ss_age_diff_em_fixed_sigma.m` estimates a fixed `sigmaBio` from the 76-row sub-epoch table, fits the collapsed 19-row table with `fixSigmaBio=true`, and runs a fixed-`sigmaBio` sensitivity grid. It writes:
+
+- `outputs/ssm_step4_em_fixed_sigma_results.mat`
+- `outputs/ssm_step4_em_fixed_sigma_primary_trajectory.csv`
+- `outputs/ssm_step4_em_fixed_sigma_primary_multistart_summary.csv`
+- `outputs/ssm_step4_em_fixed_sigma_sensitivity_summary.csv`
+- `outputs/ssm_fixed_sigma_subepoch_subject_diagnostics.csv`
+- `outputs/ssm_step4_em_fixed_sigma_delta_primary.png`
+- `outputs/ssm_step4_em_fixed_sigma_delta_sensitivity.png`
+- `outputs/ssm_step4_em_fixed_sigma_loglik_history.png`
+- `outputs/ssm_step4_em_fixed_sigma_q_history.png`
 
 Step 5 run command:
 
