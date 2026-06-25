@@ -26,9 +26,14 @@ function results = SS_age_diff(subjectTable, varargin)
     addParameter(parser, 'initialCovarianceScale', 100, @(x) isnumeric(x) && isscalar(x) && isfinite(x) && x > 0);
     addParameter(parser, 'minObservationVariance', 1e-6, @(x) isnumeric(x) && isscalar(x) && isfinite(x) && x > 0);
     addParameter(parser, 'biologicalVariance', 0, @(x) isnumeric(x) && isscalar(x) && isfinite(x) && x >= 0);
+    addParameter(parser, 'observationVarianceMode', 'mfdb_plus_bio', ...
+        @(x) ismember(string(x), ["mfdb_plus_bio", "scalar_r"]));
+    addParameter(parser, 'observationVarianceR', [], ...
+        @(x) isempty(x) || (isnumeric(x) && isscalar(x) && isfinite(x) && x > 0));
     addParameter(parser, 'verbose', true, @(x) islogical(x) || isnumeric(x));
     parse(parser, varargin{:});
     opts = parser.Results;
+    opts.observationVarianceMode = string(opts.observationVarianceMode);
 
     data = standardize_subject_table(subjectTable);
     data = data(isfinite(data.ageYears) & isfinite(data.alpha_dB) & isfinite(data.mfdb_var), :);
@@ -42,7 +47,16 @@ function results = SS_age_diff(subjectTable, varargin)
     alphaDB = data.alpha_dB(:);
     mfdbObservationVariance = data.mfdb_var(:);
     biologicalVariance = opts.biologicalVariance;
-    observationVariance = max(mfdbObservationVariance + biologicalVariance, opts.minObservationVariance);
+    if opts.observationVarianceMode == "scalar_r"
+        if isempty(opts.observationVarianceR)
+            error('observationVarianceR is required when observationVarianceMode is scalar_r.');
+        end
+        scalarObservationVarianceR = max(opts.observationVarianceR, opts.minObservationVariance);
+        observationVariance = scalarObservationVarianceR * ones(height(data), 1);
+    else
+        scalarObservationVarianceR = NaN;
+        observationVariance = max(mfdbObservationVariance + biologicalVariance, opts.minObservationVariance);
+    end
     groupIndicator = make_group_indicator(data.groupLabel);
     ageGaps = diff(ageYears);
 
@@ -196,6 +210,8 @@ function results = SS_age_diff(subjectTable, varargin)
     diagnostics.qScaleDelta = opts.qScaleDelta;
     diagnostics.processNoiseQF0 = processNoiseQF0;
     diagnostics.processNoiseQDelta = processNoiseQDelta;
+    diagnostics.observationVarianceMode = opts.observationVarianceMode;
+    diagnostics.observationVarianceR = scalarObservationVarianceR;
     diagnostics.biologicalVariance = biologicalVariance;
     diagnostics.mfdbObservationVariance = mfdbObservationVariance;
     diagnostics.totalObservationVariance = observationVariance;
@@ -233,7 +249,12 @@ function results = SS_age_diff(subjectTable, varargin)
         fprintf('Age span: %.3f to %.3f years\n', min(ageYears), max(ageYears));
         fprintf('q_init = %.6g | q_f0 = %.6g | q_delta = %.6g\n', ...
             qInit, processNoiseQF0, processNoiseQDelta);
-        fprintf('Biological variance = %.6g dB^2\n', biologicalVariance);
+        fprintf('Observation variance mode = %s\n', opts.observationVarianceMode);
+        if opts.observationVarianceMode == "scalar_r"
+            fprintf('Scalar observation variance r = %.6g dB^2\n', scalarObservationVarianceR);
+        else
+            fprintf('Biological variance = %.6g dB^2\n', biologicalVariance);
+        end
         fprintf('Total observation variance range: %.6g to %.6g dB^2\n', ...
             min(observationVariance), max(observationVariance));
     end
