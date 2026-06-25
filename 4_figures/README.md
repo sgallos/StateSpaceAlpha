@@ -69,3 +69,21 @@ from top to bottom.
 Takeaway: this figure shows why some EM strategies are useful diagnostics
 rather than primary analyses: clean runs should have monotonic log-likelihood,
 settled `q` values, and no boundary hit.
+
+## approach1_four_panel_comparison.png
+
+Approach 1 sets observation noise exactly equal to `mfdb_var` and sets
+`sigma2_bio = 0`. The four panels compare Path A (120 s MFDB variance) and
+Path B (sub-epoch SEM variance), each under likelihood-selected grid `q` and
+fixed heuristic `q`.
+Takeaway: the grid-q fits are more flexible and can land on the q-grid
+boundary, while the fixed-q fits impose smoother trajectories. This is the
+direct check of what the SSM says when MFDB variance is the only observation
+noise.
+
+## approach1_PathA_120s_*.png and approach1_PathB_subepoch_*.png
+
+Path-specific Approach 1 outputs. Each path has a posterior delta-band plot,
+a fixed-q delta-band plot, and a log-likelihood heatmap over the q grid.
+Path A uses pure 120 s MFDB spectral-estimation variance. Path B uses the
+sub-epoch-derived SEM variance from the collapsed 4 x 30 s table.

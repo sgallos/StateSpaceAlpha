@@ -11,6 +11,11 @@ RUN_ME_StateSpaceAlpha
 
 Key scripts:
 
+- `run_approach1_mfdb_noise_only.m`: MFDB observation-noise-only analysis.
+  Runs Path A (120 s MFDB variance) and Path B (sub-epoch SEM variance) with
+  both likelihood-selected grid q and fixed heuristic q.
+- `plot_approach1_path_comparison.m`: four-panel comparison of Approach 1
+  Path A/Path B and grid-q/fixed-q fits.
 - `run_ssm_no_resampling_matrix.m`: main six-run no-subject-resampling
   sensitivity matrix.
 - `plot_em_convergence_diagnostics.m`: convergence diagnostic for the four
