@@ -1,4 +1,4 @@
-function run_power_ssm_scalar_r()
+function run_power_ssm_scalar_r(varargin)
 %RUN_POWER_SSM_SCALAR_R Power-band SSM with one EM-fit observation variance.
 %
 % This workflow estimates Control, CP, and CP-Control group-difference
@@ -43,6 +43,42 @@ outputPrefix = "power_ssm";
 %% ========================================================================
 %% END USER SETTINGS -- do not edit below
 %% ========================================================================
+
+settings = struct();
+settings.bandName = bandName;
+settings.bandLowHz = bandLowHz;
+settings.bandHighHz = bandHighHz;
+settings.inputTable = inputTable;
+settings.powerColumn = powerColumn;
+settings.observationVarianceMode = observationVarianceMode;
+settings.qMode = qMode;
+settings.qFixedValue = qFixedValue;
+settings.qF0Grid = qF0Grid;
+settings.qGroupDifferenceGrid = qGroupDifferenceGrid;
+settings.emMaxIterations = emMaxIterations;
+settings.emTolerance = emTolerance;
+settings.qInitMultipliers = qInitMultipliers;
+settings.rFloor = rFloor;
+settings.rCeiling = rCeiling;
+settings.outputPrefix = outputPrefix;
+settings = apply_name_value_overrides(settings, varargin{:});
+
+bandName = settings.bandName;
+bandLowHz = settings.bandLowHz;
+bandHighHz = settings.bandHighHz;
+inputTable = settings.inputTable;
+powerColumn = settings.powerColumn;
+observationVarianceMode = settings.observationVarianceMode;
+qMode = settings.qMode;
+qFixedValue = settings.qFixedValue;
+qF0Grid = settings.qF0Grid;
+qGroupDifferenceGrid = settings.qGroupDifferenceGrid;
+emMaxIterations = settings.emMaxIterations;
+emTolerance = settings.emTolerance;
+qInitMultipliers = settings.qInitMultipliers;
+rFloor = settings.rFloor;
+rCeiling = settings.rCeiling;
+outputPrefix = settings.outputPrefix;
 
 repoRoot = fileparts(fileparts(mfilename('fullpath')));
 outputsDir = fullfile(repoRoot, 'outputs');
@@ -658,5 +694,23 @@ function out = title_case(value)
         out = value;
     else
         out = [upper(value(1)), lower(value(2:end))];
+    end
+end
+
+function settings = apply_name_value_overrides(settings, varargin)
+    if isempty(varargin)
+        return;
+    end
+    if mod(numel(varargin), 2) ~= 0
+        error('Overrides must be supplied as name-value pairs.');
+    end
+
+    validNames = string(fieldnames(settings));
+    for i = 1:2:numel(varargin)
+        name = string(varargin{i});
+        if ~any(validNames == name)
+            error('Unknown run_power_ssm_scalar_r option: %s', name);
+        end
+        settings.(name) = varargin{i + 1};
     end
 end

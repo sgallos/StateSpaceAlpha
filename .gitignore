@@ -9,3 +9,6 @@ outputs/
 references/core_inputs/*_mfdb.mat
 !references/core_inputs/*_fixture.mat
 
+# Local scratch notes and nested coherence sandbox repo.
+analysis.md
+my-mfdb/

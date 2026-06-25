@@ -10,6 +10,10 @@ cd('/Users/gallo/projects/StateSpaceAlpha')
 run('1_data_preparation/smoke_test_alpha_extraction.m')
 run('1_data_preparation/check_subepoch_consistency.m')
 run('1_data_preparation/collapse_subepoch_alpha_table_for_ssm.m')
+
+% Multi-band power workflow for scalar-r SSM:
+run('1_data_preparation/extract_band_power_subepochs.m')
+run('1_data_preparation/collapse_subepoch_power_table_for_ssm.m')
 ```
 
 `load_one_subject_data.m` is a minimal inspection script. Edit `subjectID` at
@@ -22,3 +26,7 @@ values per subject so unstable epochs are easy to spot.
 `collapse_subepoch_alpha_table_for_ssm.m` collapses the 4 x 30 s sub-epoch
 alpha table into a 19-row subject table with a more realistic observation
 variance.
+`extract_band_power_subepochs.m` reintegrates the saved sub-epoch spectra into
+delta (1-4 Hz), theta (4-8 Hz), and alpha (8-12 Hz) power columns.
+`collapse_subepoch_power_table_for_ssm.m` collapses that 76-row multi-band
+table into a 19-row Welch-style table for the scalar-`r` power SSM.
