@@ -11,6 +11,11 @@ RUN_ME_StateSpaceAlpha
 
 Key scripts:
 
+- `run_power_ssm_scalar_r.m`: power-band SSM workflow with one EM-fit total
+  observation-noise variance `r`. The current default runs alpha (8-12 Hz)
+  on the collapsed sub-epoch table, compares four q treatments, and writes
+  trajectory, group-difference, q-version, EM-diagnostic, and Profile-q
+  heatmap figures.
 - `run_approach1_mfdb_noise_only.m`: MFDB observation-noise-only analysis.
   Runs Path A (120 s MFDB variance) and Path B (sub-epoch SEM variance) with
   both likelihood-selected grid q and fixed heuristic q.

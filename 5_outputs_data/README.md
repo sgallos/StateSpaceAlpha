@@ -17,6 +17,10 @@ Curated small CSV outputs for review.
   sensitivity summary from the primary no-resampling workflow.
 - `ssm_posterior_no_resampling_sigmaBio_subject_diagnostics.csv`: subject-level
   diagnostics used to estimate empirical `sigmaBio`.
+- `power_ssm_alpha_summary.csv`: scalar-`r` alpha-band SSM summary across
+  EM-Joint, FixedHeuristicQ, FixedSmoothQ, and Profile-q treatments.
+- `power_ssm_alpha_trajectories.csv`: scalar-`r` alpha-band trajectory table
+  for the same four q treatments.
 
 Large `.mat` files and full generated outputs remain in `outputs/`, which is
 ignored by git.

@@ -87,3 +87,45 @@ Path-specific Approach 1 outputs. Each path has a posterior delta-band plot,
 a fixed-q delta-band plot, and a log-likelihood heatmap over the q grid.
 Path A uses pure 120 s MFDB spectral-estimation variance. Path B uses the
 sub-epoch-derived SEM variance from the collapsed 4 x 30 s table.
+
+## power_ssm_alpha_three_trajectories.png
+
+Scalar-`r` alpha-band power SSM using one EM-fit total observation-noise
+variance and no MFDB/sigmaBio split. The displayed version is
+FixedHeuristicQ because EM-Joint did not converge cleanly. The three panels
+show Control, CP, and CP-Control group-difference trajectories with subject
+dots and 95% smoother posterior credible bands.
+Takeaway: the same CP-lower-than-Control pattern appears when observation
+noise is represented as a single fitted scalar variance.
+
+## power_ssm_alpha_group_difference.png
+
+The scalar-`r` alpha CP-Control group-difference trajectory alone, with the
+zero reference line. This is the direct scientific panel from the scalar-`r`
+workflow.
+Takeaway: the FixedHeuristicQ fit has a negative group difference, with the
+credible band excluding zero across part of the 12-15 year range.
+
+## power_ssm_alpha_q_versions.png
+
+Four scalar-`r` q treatments on alpha: EM-Joint, FixedHeuristicQ,
+FixedSmoothQ, and Profile-q. Each panel shows the CP-Control group-difference
+trajectory with a 95% posterior band.
+Takeaway: FixedHeuristicQ, FixedSmoothQ, and Profile-q all show a similar
+negative group difference. EM-Joint is wider and did not converge cleanly,
+so it is a diagnostic rather than the preferred display version.
+
+## power_ssm_alpha_em_diagnostics.png
+
+EM histories for the scalar-`r` alpha runs that use EM. The panels show
+log-likelihood, q values, and fitted observation variance `r`.
+Takeaway: the fixed-q versions converge monotonically; EM-Joint does not
+settle cleanly by the iteration limit.
+
+## power_ssm_alpha_profile_q_heatmap.png
+
+Profile-q log-likelihood surface for scalar-`r` alpha, with `r` fixed from
+the FixedHeuristicQ fallback. The red marker is the best grid point.
+Takeaway: the maximum lands on the lower q boundary for the group-difference
+trajectory, which flags that this smoothness dimension is not strongly
+identified by likelihood alone at n = 19.
